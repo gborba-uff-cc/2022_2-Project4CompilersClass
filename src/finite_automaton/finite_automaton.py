@@ -34,7 +34,7 @@ class DFA(FA):
         super().__init__(Q, Sigma, q0, F)
         self.delta: DFATransitionFunction = delta
 
-    def accept(self, word: str) -> bool:
+    def Accept(self, word: str) -> bool:
         cur_state = self.q0
         i_char = 0
         len_w = len(word)

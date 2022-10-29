@@ -1,3 +1,7 @@
+'''
+Compiler front-end entry point
+'''
+
 # import sys
 
 # print(sys.version,flush=False)

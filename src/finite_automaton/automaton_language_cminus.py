@@ -1,8 +1,12 @@
+'''
+C- automata declaration
+'''
+
 import typing
 
-import finite_automaton.finite_automaton as fa
 import tools.toolbox as tt
 
+import finite_automaton.finite_automaton as fa
 
 # NOTE - alphabets
 lowerLettersAlphabet: frozenset[fa.Symbol] = tt.CharRange('a','z')

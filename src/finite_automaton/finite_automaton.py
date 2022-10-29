@@ -1,6 +1,9 @@
+'''
+DFA definition and some DFA operations
+'''
+
 import itertools
 import typing
-
 
 State: typing.TypeAlias = str
 Symbol: typing.TypeAlias = str

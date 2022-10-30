@@ -122,3 +122,211 @@ def CreateDFAKeywords() -> fa.DFA:
         delta=delta,
         q0=Q[0],
         F=F)
+
+
+def CreateDFAIdentifiersOverlapingKeywords() -> fa.DFA:
+    F: typing.Iterable[fa.State] = []
+    F.append('f01')
+
+    Q: typing.Iterable[fa.Symbol] = []
+    Q.extend(['s00', 'empty'])
+    Q.extend(F)
+
+    delta = {}
+    delta.update(
+        tt.ExpandDFATransitions(
+            's00',
+            tuple(((s, 'f01') for s in lettersAlphabet)),
+            'empty', alphabet))
+
+    delta.update(
+        tt.ExpandDFATransitions(
+            'f01',
+            tuple(((s, 'f01') for s in lettersAlphabet)),
+            'empty', alphabet))
+
+    delta.update(
+        tt.ExpandDFATransitions('empty', (), 'empty', alphabet))
+
+    return fa.DFA(
+        Q=Q,
+        Sigma=alphabet,
+        delta=delta,
+        q0=Q[0],
+        F=F)
+
+
+def CreateDFANumbers() -> fa.DFA:
+    F: typing.Iterable[fa.State] = []
+    F.append('f01')
+
+    Q: typing.Iterable[fa.Symbol] = []
+    Q.extend(['s00', 'empty'])
+    Q.extend(F)
+
+    delta = {}
+    delta.update(
+        tt.ExpandDFATransitions(
+            's00',
+            tuple(((s, 'f01') for s in digitsAlphabet)),
+            'empty', alphabet))
+
+    delta.update(
+        tt.ExpandDFATransitions(
+            'f01',
+            tuple(((s, 'f01') for s in digitsAlphabet)),
+            'empty', alphabet))
+
+    delta.update(
+        tt.ExpandDFATransitions('empty', (), 'empty', alphabet))
+
+    return fa.DFA(
+        Q=Q,
+        Sigma=alphabet,
+        delta=delta,
+        q0=Q[0],
+        F=F)
+
+
+def CreateDFAComments() -> fa.DFA:
+    F: typing.Iterable[fa.State] = []
+    F.append('f01')
+
+    Q: typing.Iterable[fa.Symbol] = []
+    Q.extend( (f's{i:02}' for i in range(5)) )
+    Q.append('empty')
+    Q.extend(F)
+
+    delta = {}
+    delta.update(
+        tt.ExpandDFATransitions('s00', (('/', 's01'), ), 'empty', alphabet))
+
+    delta.update(
+        tt.ExpandDFATransitions('s01', (('*', 's02'), ), 'empty', alphabet))
+
+    delta.update(
+        tt.ExpandDFATransitions('s02', (('*', 's03'), ), 's02', alphabet))
+
+    delta.update(
+        tt.ExpandDFATransitions(
+            's03', (
+                ('*', 's03'),
+                ('/', 'f01')
+            ), 's04', alphabet))
+
+    delta.update(
+        tt.ExpandDFATransitions('s04', (('*', 's03'), ), 's04', alphabet))
+
+    delta.update(
+        tt.ExpandDFATransitions('f01', (), 'empty', alphabet))
+
+    delta.update(
+        tt.ExpandDFATransitions('empty', (), 'empty', alphabet))
+
+    return fa.DFA(
+        Q=Q,
+        Sigma=alphabet,
+        delta=delta,
+        q0=Q[0],
+        F=F)
+
+
+def CreateDFAOperators() -> fa.DFA:
+    F: typing.Iterable[fa.State] = []
+    F.extend( (f'f{i:02}' for i in range(1, 20)) )
+
+    Q: typing.Iterable[fa.Symbol] = []
+    Q.extend(['s00', 's01'])
+    Q.append('empty')
+
+    delta = {}
+    delta.update(
+        tt.ExpandDFATransitions(
+            's00', (
+                ('+', 'f01'),
+                ('-', 'f02'),
+                ('*', 'f03'),
+                ('/', 'f04'),
+                ('<', 'f05'),
+                ('>', 'f07'),
+                ('=', 'f09'),
+                ('!', 's01'),
+                (';', 'f12'),
+                (',', 'f13'),
+                ('(', 'f14'),
+                (')', 'f15'),
+                ('[', 'f16'),
+                (']', 'f17'),
+                ('{', 'f18'),
+                ('}', 'f19'),
+            ), 'empty', alphabet))
+
+    delta.update(
+        tt.ExpandDFATransitions('f01', (), 'empty', alphabet))
+
+    delta.update(
+        tt.ExpandDFATransitions('f02', (), 'empty', alphabet))
+
+    delta.update(
+        tt.ExpandDFATransitions('f03', (), 'empty', alphabet))
+
+    delta.update(
+        tt.ExpandDFATransitions('f04', (), 'empty', alphabet))
+
+    delta.update(
+        tt.ExpandDFATransitions('f05', (('=', 'f06'), ), 'empty', alphabet))
+
+    delta.update(
+        tt.ExpandDFATransitions('f07', (('=', 'f08'), ), 'empty', alphabet))
+
+    delta.update(
+        tt.ExpandDFATransitions('f09', (('=', 'f10'), ), 'empty', alphabet))
+
+    delta.update(
+        tt.ExpandDFATransitions('s01', (('=', 'f11'), ), 'empty', alphabet))
+
+    delta.update(
+        tt.ExpandDFATransitions('f06', (), 'empty', alphabet))
+
+    delta.update(
+        tt.ExpandDFATransitions('f08', (), 'empty', alphabet))
+
+    delta.update(
+        tt.ExpandDFATransitions('f10', (), 'empty', alphabet))
+
+    delta.update(
+        tt.ExpandDFATransitions('f11', (), 'empty', alphabet))
+
+    delta.update(
+        tt.ExpandDFATransitions('f12', (), 'empty', alphabet))
+
+    delta.update(
+        tt.ExpandDFATransitions('f13', (), 'empty', alphabet))
+
+    delta.update(
+        tt.ExpandDFATransitions('f14', (), 'empty', alphabet))
+
+    delta.update(
+        tt.ExpandDFATransitions('f15', (), 'empty', alphabet))
+
+    delta.update(
+        tt.ExpandDFATransitions('f16', (), 'empty', alphabet))
+
+    delta.update(
+        tt.ExpandDFATransitions('f17', (), 'empty', alphabet))
+
+    delta.update(
+        tt.ExpandDFATransitions('f18', (), 'empty', alphabet))
+
+    delta.update(
+        tt.ExpandDFATransitions('f19', (), 'empty', alphabet))
+
+    delta.update(
+        tt.ExpandDFATransitions('empty', (), 'empty', alphabet))
+
+    return fa.DFA(
+        Q=Q,
+        Sigma=alphabet,
+        delta=delta,
+        q0=Q[0],
+        F=F)

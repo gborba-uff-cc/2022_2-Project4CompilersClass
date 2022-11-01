@@ -214,6 +214,95 @@ class DFA(FA):
                 return True, q
         return False, ''
 
+    def Minimize(self) -> 'DFA':
+        """
+        Minimize a DFA returning a new DFA with the minimum necessary states and
+        transitions.
+        """
+        T: typing.Sequence[frozenset[State]] = []
+        T.append(frozenset(self.F))
+        T.append(frozenset(self.Q-self.F))
+
+        sigmaSequence = sorted(list(self.alphabet))
+
+        iP = 0
+        while iP < len(T):
+            # NOTE - partitions after split
+            S = self.__MinimizeSplit(T[iP], T, sigmaSequence)
+            # NOTE - growing like this to avoid shifts on list
+            T[iP]=S[0]  # NOTE - instead of poping the element, update its place
+            T.extend(S[1:])  # NOTE - growing the list on tail should be cheaper
+            if len(S) > 1:  # NOTE - restart because split happened
+                iP = 0
+            elif len(S) == 1:  # NOTE - continue searching for split
+                iP += 1
+            else:
+                raise RuntimeError('Split returned less than 1 set.')
+
+        Q: typing.Iterable[State] = (f"{{\'{', '.join(q)}\'}}" for q in T)
+        transitionFunction: DFATransitionFunction = {}
+        for q in T:
+            for s in self.alphabet:
+                transitionFunction[(f"{{\'{', '.join(q)}\'}}", s)] = f"{{\'{', '.join(self.__MinimizeWholePartitionGoes(q, s, T))}\'}}"
+        q0: State = tuple((f"{{\'{', '.join(q)}\'}}" for q in T if self.q0 in q))[0]
+        F: typing.Iterable[State] = (
+            f"{{\'{', '.join(q)}\'}}" for q in T if len(self.F & q))
+
+        return DFA(
+            Q=Q,
+            Sigma=self.alphabet,
+            delta=transitionFunction,
+            q0=q0,
+            F=F
+        )
+
+    def __MinimizeSplit(
+        self,
+        aPartition: frozenset[State],
+        thePartitions: typing.Sequence[frozenset[State]],
+        anAlphabet: typing.Sequence
+    )->typing.Sequence[frozenset[State]]:
+        """
+        Verify for each symbol in `alphabet` where each state in `partition`
+        goes  and split the current `partition` if any state make the current
+        `partition` point to 2 or more other partitions
+        """
+        fromStateToPartition: dict[State, frozenset[State]] = {}
+        fromPartitionToState: dict[frozenset[State],set[State]] = {}
+        for symbol in anAlphabet:
+            fromStateToPartition.clear()
+            for state in aPartition:
+                stateGoes = self.transitionFunction[state,symbol]
+                for partition in thePartitions:
+                    if stateGoes in partition:
+                        fromStateToPartition[state]=partition
+                        break
+            # NOTE - states by partition
+            fromPartitionToState.clear()
+            for k, v in fromStateToPartition.items():
+                fromPartitionToState.setdefault(v, set())
+                fromPartitionToState[v].add(k)
+            if len(fromPartitionToState) > 1:
+                return [frozenset(v) for v in fromPartitionToState.values()]
+        return [frozenset(v) for v in fromPartitionToState.values()]
+
+    def __MinimizeWholePartitionGoes(
+        self,
+        aPartition: frozenset[State],
+        aSymbol: Symbol,
+        thePartitions: typing.Sequence[frozenset[State]],
+    ) -> frozenset[State]:
+        """
+        Find the partition where `aPartition` points to.
+        """
+        # NOTE - one state will do
+        for state in aPartition:
+            stateGoes = self.transitionFunction[state,aSymbol]
+            for partition in thePartitions:
+                if stateGoes in partition:
+                    return partition
+        raise RuntimeError('Destination partition not found for 'f'\n{aPartition=}'f'\n{aSymbol=}')
+
 
 if __name__ == '__main__':
     def CreateDFA2aExactly():

@@ -346,13 +346,52 @@ if __name__ == '__main__':
             F={'s3'}
         )
 
+    def CreateDFAac_bc():
+        return DFA(
+            Q=[f'q{i}' for i in range(5)]+['qe'],
+            Sigma='a b c'.split(),
+            delta={
+                ('q0', 'a'): 'q1',
+                ('q0', 'b'): 'q2',
+                ('q0', 'c'): 'qe',
+                ('q1', 'a'): 'qe',
+                ('q1', 'b'): 'qe',
+                ('q1', 'c'): 'q3',
+                ('q2', 'a'): 'qe',
+                ('q2', 'b'): 'qe',
+                ('q2', 'c'): 'q4',
+                ('q3', 'a'): 'qe',
+                ('q3', 'b'): 'qe',
+                ('q3', 'c'): 'qe',
+                ('q4', 'a'): 'qe',
+                ('q4', 'b'): 'qe',
+                ('q4', 'c'): 'qe',
+                ('qe', 'a'): 'qe',
+                ('qe', 'b'): 'qe',
+                ('qe', 'c'): 'qe',
+            },
+            q0='q0',
+            F={'q3','q4'}
+        )
+
     M1 = CreateDFA2aExactly()
     M2 = CreateDFA2bAtLeast()
-    M3 = M2.Complement()
-    M4 = M1.Union(M2)
-    M5 = M1.Intersection(M2)
+    M3 = CreateDFAac_bc()
+    machines = [
+        M1,                  # NOTE - M00
+        M1.Minimize(),       # NOTE - M01
+        M2,                  # NOTE - M02
+        M2.Minimize(),       # NOTE - M03
+        M3,                  # NOTE - M04
+        M3.Minimize(),       # NOTE - M05
+        M1.Complement(),     # NOTE - M06
+        M2.Complement(),     # NOTE - M07
+        M1.Union(M2),        # NOTE - M08
+        M1.Intersection(M2)  # NOTE - M09
+    ]
 
-    for i, M in enumerate((M1, M2, M3, M4, M5), start=1):
+    for i, M in enumerate(machines):
         print()
-        for w in ('a aa b bb bbb abba aab bbba babab abbbbaa'.split()+['']):
+        print(f'''M{i:02}.toRegularExpression()=\n\t{M.toRegularExpression()}''')
+        for w in [''.join(tuple4) for tuple4 in itertools.product(('a','b'),repeat=4)]:
             print(f'''M{i}.Accept('{w}')={M.Accept(w)}''')

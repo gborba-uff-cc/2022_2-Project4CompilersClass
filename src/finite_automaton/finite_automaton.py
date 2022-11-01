@@ -37,6 +37,13 @@ class DFA(FA):
         super().__init__(Q, Sigma, q0, F)
         self.transitionFunction: DFATransitionFunction = delta
 
+    def __str__(self) -> str:
+        Q = '\n'.join(sorted((f"\t{q}" for q in self.Q)))
+        Sigma = '\n'.join(sorted((f"\t{{\'{', '.join(s)}\'}}" for s in self.alphabet)))
+        delta = '\n'.join((f'\t{k} -> {v}' for k,v in self.transitionFunction.items()))
+        F = '\n'.join(sorted((f"\t{q}" for q in self.F)))
+        return f'Q: {Q}\nΣ: {Sigma}\nδ: {delta}\nq0: \t{self.q0}\nF: {F}'
+
     def Accept(self, word: str) -> bool:
         cur_state = self.q0
         i_char = 0

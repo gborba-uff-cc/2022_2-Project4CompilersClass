@@ -131,6 +131,89 @@ class DFA(FA):
             transitionFunction[(str(k), symbol)] = str(v)
         return (Q, transitionFunction)
 
+    def toRegularExpression(self):
+        """
+        Return the regular expression associated to self.
+        """
+        L: dict[State, dict[State,set[Symbol]]] = {}
+        for ((qa,s),qb) in self.transitionFunction.items():
+            Lqa = L.setdefault(qa,dict())
+            Lqb = Lqa.setdefault(qb,set())
+            Lqb.add(s)
+            # NOTE - add epsilon to languages related to F
+            if qa in self.F:
+                Lqa['']=set(('',))
+
+        Lq0 = self.__RegExp(L,self.q0)
+        return Lq0
+
+    def __RegExp(
+        self,
+        L: dict[State, dict[State,set[Symbol]]],
+        q: State) -> str:
+        """
+        Recursively return the regular expression associated with `q` given the
+        initial set `L` of generated languages.
+        """
+        L = self.__RemoveDeadLanguages(L)
+        ERReservedSymbols: frozenset[Symbol] = frozenset('( ) | *'.split())
+        def __SetSymbolsToStr(symbolsSet: frozenset[Symbol]|set[Symbol]) -> str:
+            symbols: typing.Iterable[Symbol] = []
+            for s in symbolsSet:
+                if s in ERReservedSymbols:
+                    symbols.append(f'\\{s}')
+                else:
+                    symbols.append(s)
+            lenSymbolsSet = len(symbolsSet)
+            return f"{'(' if lenSymbolsSet > 1 else ''}{'|'.join(symbols)}{')' if lenSymbolsSet > 1 else ''}"
+
+        ardenGenerated: str = ''
+        if q in L[q].keys():
+            symbolsSet = L[q][q]
+            symbols = __SetSymbolsToStr(symbolsSet)
+            lenSymbolsSet = len(symbolsSet)
+            ardenGenerated = \
+                f"{'(' if lenSymbolsSet > 1 else ''}{symbols}{')' if lenSymbolsSet > 1 else ''}*"
+            del L[q][q]
+
+        LGenerated: typing.Iterable[str] = []
+        for qo, symbolsSet in L[q].items():
+            if qo:
+                symbols = __SetSymbolsToStr(symbolsSet)
+                LGenerated.append(f'{symbols}{self.__RegExp(L,qo)}')
+        lenLGenerated = len(LGenerated)
+        generatedRE = f"{'('if lenLGenerated > 1 else ''}{'|'.join(LGenerated)}{')'if lenLGenerated > 1 else ''}"
+        return f"{ardenGenerated}{generatedRE}"
+
+    def __RemoveDeadLanguages(
+        self,
+        L: dict[State, dict[State,set[Symbol]]]
+    ) -> dict[State, dict[State,set[Symbol]]]:
+        """
+        Remove dead languages generated starting by an state.
+        """
+        searchDeadLanguage = True
+        deadLanguage = ''
+        while searchDeadLanguage:
+            searchDeadLanguage, deadLanguage = self.__FindDeadLanguage(L)
+            if searchDeadLanguage:
+                del L[deadLanguage]
+                for q in L.keys():
+                    L[q].pop(deadLanguage, None)
+        return L
+
+    def __FindDeadLanguage(
+        self,
+        L: dict[State, dict[State,set[Symbol]]]
+    ) -> tuple[bool, State]:
+        """
+        Return a state that do not leave itself.
+        """
+        for q in L.keys():
+            if len(L[q]) == 0 or all(map(lambda elem: elem == q, L[q].keys())):
+                return True, q
+        return False, ''
+
 
 if __name__ == '__main__':
     def CreateDFA2aExactly():

@@ -35,14 +35,14 @@ class DFA(FA):
         F: typing.Iterable[Symbol]
     ) -> None:
         super().__init__(Q, Sigma, q0, F)
-        self.delta: DFATransitionFunction = delta
+        self.transitionFunction: DFATransitionFunction = delta
 
     def Accept(self, word: str) -> bool:
         cur_state = self.q0
         i_char = 0
         len_w = len(word)
         while i_char < len_w:
-            cur_state = self.delta[cur_state, word[i_char]]
+            cur_state = self.transitionFunction[cur_state, word[i_char]]
             i_char += 1
         # acceptance condition
         return (i_char == len(word)) and (cur_state in self.F)
@@ -51,7 +51,7 @@ class DFA(FA):
         return DFA(
             Q=self.Q,
             Sigma=self.alphabet,
-            delta=self.delta,
+            delta=self.transitionFunction,
             q0=self.q0,
             F=self.Q - self.F
         )
@@ -63,7 +63,7 @@ class DFA(FA):
         if len(self.alphabet ^ other.alphabet) != 0:
             RuntimeError("can't do intersection, alphabets are different")
 
-        newQ, newDelta = self.__IntersectionAndUnionCommon(other)
+        newQ, newTransitionFunction = self.__IntersectionAndUnionCommon(other)
         Q = frozenset(map(str, newQ))
         q0=str((self.q0,other.q0))
         F = frozenset(
@@ -71,7 +71,7 @@ class DFA(FA):
         return DFA(
             Q=Q,
             Sigma=self.alphabet,
-            delta=newDelta,
+            delta=newTransitionFunction,
             q0=q0,
             F=F
         )
@@ -83,7 +83,7 @@ class DFA(FA):
         if len(self.alphabet ^ other.alphabet) != 0:
             RuntimeError("can't do union, alphabets are different")
 
-        newQ, newDelta = self.__IntersectionAndUnionCommon(other)
+        newQ, newTransitionFunction = self.__IntersectionAndUnionCommon(other)
         Q = frozenset(map(str, newQ))
         q0=str((self.q0,other.q0))
         aux = []
@@ -93,7 +93,7 @@ class DFA(FA):
         return DFA(
             Q=Q,
             Sigma=self.alphabet,
-            delta=newDelta,
+            delta=newTransitionFunction,
             q0=q0,
             F=F
         )
@@ -104,15 +104,15 @@ class DFA(FA):
         ) -> tuple[typing.Iterable[tuple[State,State]], DFATransitionFunction]:
         Q = list((
             pair for pair in itertools.product(self.Q, other.Q)))
-        delta: DFATransitionFunction = {}
+        transitionFunction: DFATransitionFunction = {}
         for ((m1q, m2q), symbol) in itertools.product(Q, self.alphabet):
             v = (
-                self.delta[m1q, symbol],
-                other.delta[m2q, symbol]
+                self.transitionFunction[m1q, symbol],
+                other.transitionFunction[m2q, symbol]
             )
             k = (m1q, m2q)
-            delta[(str(k), symbol)] = str(v)
-        return (Q, delta)
+            transitionFunction[(str(k), symbol)] = str(v)
+        return (Q, transitionFunction)
 
 
 if __name__ == '__main__':

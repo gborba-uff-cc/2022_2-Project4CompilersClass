@@ -1,14 +1,31 @@
 int DoubleOf(int x) {
-    return x+x;
+    return 2*x;
 }
 
 void main() {
-    /*count to 100*/
-    int counter = 0;
-    int num = 0;
+    int counter;
+    int doubles;
+    int v[4];
+    int i;
+    int soma;
+
+    counter = 0;
+    doubles = 0;
+    i = 0;
+    soma = 0;
+
+    /*count 100 nums*/
+
     while (counter < 100) {
         counter = counter + 1;
-        num = DoubleOf(counter)
+        doubles = DoubleOf(counter);
     }
+
+    while (i < 4) {
+        v[i] = i;
+        soma = soma + i;
+        i = i+1;
+    }
+
     return;
 }

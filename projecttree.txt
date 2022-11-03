@@ -1,0 +1,33 @@
+.\2022_2-PROJECT4COMPILERSCLASS
+|   .gitignore
+|   poetry.lock
+|   projecttree.txt
+|   pyproject.toml
+|   requirements.txt
+|   
++---.management_artifacts
+|       atividades.md
+|       
++---.venv
+|   \ ...
+|
++---.vscode
+|       2022_2-Project4CompilersClass.code-workspace
+|       
+\---src
+    |   input.cm
+    |   input.cm.scannero
+    |   main.py
+    |   
+    +---finite_automaton
+    |       automaton_language_cminus.py
+    |       __init__.py
+    |       
+    +---scanner
+    |       scanner.py
+    |       __init__.py
+    |       
+    \---tools
+            toolbox.py
+            __init__.py
+            

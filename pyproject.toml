@@ -6,6 +6,7 @@ authors = ["Gabriel Borba"]
 
 [tool.poetry.dependencies]
 python = ">=3.10"
+automata-lib = "==6.0.2"
 
 [tool.poetry.dev-dependencies]
 autopep8 = ">=1.7.0"

@@ -1,0 +1,7 @@
+automata-lib==6.0.2
+autopep8==1.7.1
+networkx==2.8.8
+pycodestyle==2.9.1
+pydot==1.4.2
+pyparsing==3.0.9
+tomli==2.0.1

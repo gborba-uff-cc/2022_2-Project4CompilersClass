@@ -1,16 +1,21 @@
 import typing
 
+
 def CharRange(start: str, end: str) -> frozenset[str]:
     """
     Helper to get the characters between a range, like [a-z].
     """
     return frozenset( (chr(code) for code in range(ord(start), ord(end)+1)) )
 
+
 def ExpandDFATransitions(
         qOrigin: str,
+        # typing.Sequence[tuple[Symbol,State]]
         symbol_qNext: typing.Sequence[tuple[str,str]],
         qDefault: str,
-        alphabet: set[str]|frozenset[str]) -> dict[tuple[str,str],str]:
+        alphabet: set[str]|frozenset[str]
+    # dict[tuple[State,Symbol]State]
+    ) -> dict[str, dict[str,str]]:
     """
     Automate the creation of transitions (qOrigin,symbol)->qNext.
 
@@ -23,12 +28,25 @@ def ExpandDFATransitions(
     `alphabet`, resulting in transitions (qOrigin,s)->qNext for every s not in
     the symbols of `symbol_qNext`.
     """
-    aux: dict[tuple[str,str],str] = {}
+    # dict[tuple[State,Symbol],State]
+    aux: dict[str, dict[str,str]] = {qOrigin: {}}
     symbolsIn: set[str] = set()
-    for s, t in symbol_qNext:
-        aux[qOrigin, s] = t
-        symbolsIn.add(s)
+    for k, v in symbol_qNext:
+        aux[qOrigin][k] = v
+        symbolsIn.add(k)
     symbolsOut = alphabet - symbolsIn
-    for s in symbolsOut:
-        aux[qOrigin, s] = qDefault
+    for k in symbolsOut:
+        aux[qOrigin][k] = qDefault
     return aux
+
+
+def SetNotation(iter: typing.Iterable[str]) -> str:
+    return f'''{{'{"','".join(map(str,sorted(iter)))}'}}'''
+
+
+# FIXME -
+def TranslateSymbols(input: str, aToB_bToA: bool = True):
+    return input
+    __translationTable = ('*()','ΑΒΓ')
+    relation = __translationTable if aToB_bToA else __translationTable[::-1]
+    return input.translate(str.maketrans(*relation))

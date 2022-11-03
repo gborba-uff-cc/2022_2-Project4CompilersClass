@@ -3,20 +3,26 @@ Compiler front-end entry point
 '''
 
 # run with:
-# python -B -OO .\src\main.py .\src\input.cm
-# python -B -OO .\src\main.py .\src\input.cm --sourceScan --echoSource
-
+# python -B -OO .\src\main.py .\src\input.cm --sourceScan --echoSourceLines --echoTraceScanner
 
 import argparse
 import dataclasses
+import io
 import sys
 import typing
 
+import finite_automaton.automaton_language_cminus as fa_alc
 import scanner.scanner as ss
 
 
 def Main() -> int:
+    """
+    Execute the compiler front-end code.
+    """
     moduleOptions = CreateCLIArgumentParser().parse_args(namespace=ModuleOptions())
+    moduleOptions.scannerOutputFile = f'{moduleOptions.sourcePath}{moduleOptions.scannerOutputFileSuffix}'
+    moduleOptions.parserOutputFile = f'{moduleOptions.sourcePath}{moduleOptions.parserOutputFileSuffix}'
+
     # ----------
     # NOTE - open the source file, show error if file not found
     if moduleOptions.sourceScan:
@@ -29,6 +35,9 @@ def Main() -> int:
 
 
 def CreateCLIArgumentParser() -> argparse.ArgumentParser:
+    """
+    Generate and configure this module cli parser.
+    """
     cli = argparse.ArgumentParser(
         prefix_chars = '-',
         description = '',
@@ -68,10 +77,15 @@ class ModuleOptions(argparse.Namespace):
     sourceScan: bool
     echoSourceLines: bool
     echoTraceScanner: bool
+    scannerOutputFile: str
     # ----------
     sourceParse: bool
     echoTraceParser: bool
+    parserOutputFile: str
     # ----------
+    scannerOutputFileSuffix: str = '.scannero'
+    parserOutputFileSuffix: str = '.parsero'
+    filesEncoding: str = 'utf-8'
     # NOTE - define where to print
     outputTo: typing.TextIO = sys.stdout
 
@@ -80,22 +94,44 @@ class ModuleOptions(argparse.Namespace):
 
 
 def RunScanner(options: ModuleOptions):
-    with open(options.sourcePath, mode='r', encoding='utf-8') as sourceCode:
-        # NOTE - scan if should scan
+    """
+    Scan the source file provided on options and generate the scanner output file.
+    """
+    textEchoBuffer = io.StringIO()
+    textTokenBuffer = io.StringIO()
+
+    with open(options.sourcePath, mode='r', encoding=options.filesEncoding) as sourceCode:
         token = ss.Token(ss.TokenType.ERROR, '')
         sourceScanner = ss.Scanner(
             sourceCode,
-            options.outputTo,
+            textEchoBuffer,
             options.echoSourceLines,
             options.echoTraceScanner)
         while token.type is not ss.TokenType.EOF:
             token = sourceScanner.GetToken()
+            if __ShouldOutputToken(token):
+                textTokenBuffer.write(f'{token}\n')
+    print(textEchoBuffer.getvalue(), file=options.outputTo)
+    with open(options.scannerOutputFile, mode='w', encoding=options.filesEncoding) as fileTokens:
+        fileTokens.write(textTokenBuffer.getvalue())
+    del textTokenBuffer
     return
 
+def __ShouldOutputToken(token: ss.Token) -> bool:
+    """
+    Return True if the token will be printed to scanner output.
+    """
+    # NOTE - reject errors token that are blanks
+    return not (token.type is  ss.TokenType.ERROR and token.value in fa_alc.blanks)
 
 def RunParser(options: ModuleOptions):
+    """
+    Parse the scanner output related to the source file provided on options and
+    generate the parser output file.
+    """
     print(NotImplementedError(f'["if moduleOptions.sourceParse:" branch on {Main.__qualname__} isn\'t implemented yet]'))
     exit(1)
+    options.parserOutputFile = f'{options.sourcePath}.{options.parserOutputFileSuffix}'
     with open('', mode='r', encoding='utf-8') as sourceCode:
         pass
     return

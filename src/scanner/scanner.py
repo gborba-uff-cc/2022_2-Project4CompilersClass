@@ -56,6 +56,11 @@ class Scanner(afd.DFA):
         self.validate()
 
     def GetToken(self) -> Token:
+        """
+        Return one token read from the file one token per call.
+
+        Echo the raws read tokens if echoTrace if needed.
+        """
         self.__wordRead = ''
         tokenType: TokenType = TokenType.ERROR
         tokenValue: str = ''
@@ -93,9 +98,7 @@ class Scanner(afd.DFA):
 
     def __ScanInputStepwise(self) -> None:
         """
-        Check if the given string is accepted by this DFA.
-
-        Yield the current configuration of the DFA at each step.
+        Read character by character from the file until the word read is valid.
         """
         word = []
         self.__lastFinalStateReached = ''
@@ -135,8 +138,8 @@ class Scanner(afd.DFA):
                     emptyWordAndEOF = True
                 # NOTE - finish reading the word right before EOF. lineBuff='mno<EOF>'
                 # needed?
-                else:
-                    self.__UngetNextChar()
+                # else:
+                #     self.__UngetNextChar()
                 # NOTE - abort while loop to check the state currently in
                 break
         if emptyWordAndEOF:
@@ -146,6 +149,9 @@ class Scanner(afd.DFA):
         return None
 
     def __GetNextChar(self) -> str:
+        """
+        Read next character from file.
+        """
         # NOTE -  there is a character in buffer
         if self.__linePos < len(self.__lineBuff):
             self.__linePos += 1
@@ -154,17 +160,22 @@ class Scanner(afd.DFA):
             return self.__GetNextLine()
 
     def __GetNextLine(self) -> str:
+        """
+        Read next line from file when the line buffer is empty.
+
+        Print the line read if the scanner should echoLines.
+        """
         # NOTE - read a chunk of text
         self.__lineBuff = self.__sourceFile.readline()
-        self.__lineNum += 1
         # NOTE - chunk not empty (not EOF)
         if self.__lineBuff:
+            self.__linePos = 1
+            self.__lineNum += 1
             # NOTE - print if needed
             if self.__echoLines:
                 self.__EchoLine()
             # NOTE - restart buffer pointer
-            self.__linePos = 1
-            return self.__lineBuff[0]
+            return self.__lineBuff[self.__linePos-1]
         else:
             raise EOFError()
 
@@ -173,7 +184,7 @@ class Scanner(afd.DFA):
         return
 
     def __EchoLine(self) -> None:
-        return print(f'{self.__lineNum:>4}: {self.__lineBuff}', end='' if self.__lineBuff[-1]=='\n' else '\n', file=self.__outTextFile)
+        return print(f'{self.__lineNum:>4}: {self.__lineBuff}', end='' if self.__lineBuff[-1:]=='\n' else '\n', file=self.__outTextFile)
 
     def __EchoToken(self, token: Token) -> None:
-        return print(f'{self.__lineNum:>6}: {token}')
+        return print(f'{self.__lineNum:>6}: {token}', file=self.__outTextFile)

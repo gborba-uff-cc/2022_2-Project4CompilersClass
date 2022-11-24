@@ -1,5 +1,4 @@
 import copy
-import enum
 import io
 import typing
 
@@ -7,25 +6,7 @@ import automata.base.exceptions as abe
 import automata.fa.dfa as afd
 import finite_automaton.automaton_language_cminus as fa_alc
 import tools.toolbox as tt
-
-
-@enum.unique
-class TokenType(enum.Enum):
-    ERROR = enum.auto()
-    EOF = enum.auto()
-    ID = enum.auto()
-    NUM = enum.auto()
-    KEYWORD = enum.auto()
-    SYMBOL = enum.auto()
-    COMMENT = enum.auto()
-
-
-class Token(typing.NamedTuple):
-    type: TokenType
-    value: str
-
-    def __str__(self) -> str:
-        return f'<{self.type.name},"{self.value}">'
+import structures.token as st
 
 
 class Scanner(afd.DFA):
@@ -57,7 +38,7 @@ class Scanner(afd.DFA):
         self.allow_partial = False
         self.validate()
 
-    def GetToken(self) -> tuple[tuple[int, int], Token]:
+    def GetToken(self) -> tuple[tuple[int, int], st.Token]:
         """
         Return the position (line, column) and the next token read from the
         file, one token per call.
@@ -65,7 +46,7 @@ class Scanner(afd.DFA):
         Echoing the positions and raws read tokens if echoTrace if needed.
         """
         self.__wordRead = ''
-        tokenType: TokenType = TokenType.ERROR
+        tokenType: st.TokenType = st.TokenType.ERROR
         tokenValue: str = ''
 
         # NOTE - run automaton
@@ -74,32 +55,32 @@ class Scanner(afd.DFA):
             tokenValue = self.__wordRead
             tokenType = self.IdentifyTokenTypeByValue(tokenValue)
         except EOFError:
-            tokenType = TokenType.EOF
+            tokenType = st.TokenType.EOF
             tokenValue = ''
         except abe.RejectionException:
-            tokenType = TokenType.ERROR
+            tokenType = st.TokenType.ERROR
             tokenValue = self.__wordRead
 
         position: tuple[int, int] = (self.__wordLine+1, self.__wordColumn+1)
-        token: Token = Token(tokenType, tokenValue)
+        token: st.Token = st.Token(tokenType, tokenValue)
         if self.__echoTrace:
             self.__EchoToken(position, token)
         return position, token
 
-    def IdentifyTokenTypeByValue(self, value: str) -> TokenType:
-        tokenType = TokenType.ERROR
+    def IdentifyTokenTypeByValue(self, value: str) -> st.TokenType:
+        tokenType = st.TokenType.ERROR
         for dfaType, M in fa_alc.dictCMinusDfas.items():
             if M.accepts_input(value):
                 if dfaType is fa_alc.CMinusDFAs.Keywords:
-                    tokenType = TokenType.KEYWORD
+                    tokenType = st.TokenType.KEYWORD
                 elif dfaType is fa_alc.CMinusDFAs.Identifiers:
-                    tokenType = TokenType.ID
+                    tokenType = st.TokenType.ID
                 elif dfaType is fa_alc.CMinusDFAs.Numbers:
-                    tokenType = TokenType.NUM
+                    tokenType = st.TokenType.NUM
                 elif dfaType is fa_alc.CMinusDFAs.Operators:
-                    tokenType = TokenType.SYMBOL
+                    tokenType = st.TokenType.SYMBOL
                 elif dfaType is fa_alc.CMinusDFAs.Comments:
-                    tokenType = TokenType.COMMENT
+                    tokenType = st.TokenType.COMMENT
         return tokenType
 
     def __ScanInputStepwise(self) -> None:
@@ -202,5 +183,5 @@ class Scanner(afd.DFA):
     def __EchoLine(self, lineno: int, line: str) -> None:
         return print(f'{lineno:>4}: {line}', end='' if line[-1:]=='\n' else '\n', file=self.__outTextFile)
 
-    def __EchoToken(self,position: tuple[int,int], token: Token) -> None:
+    def __EchoToken(self,position: tuple[int,int], token: st.Token) -> None:
         return print(f'{position[0]:>6}.{position[1]:>02}: {token}', file=self.__outTextFile)

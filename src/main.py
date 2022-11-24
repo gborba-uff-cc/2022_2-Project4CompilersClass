@@ -13,6 +13,7 @@ import typing
 
 import finite_automaton.automaton_language_cminus as fa_alc
 import scanner.scanner as ss
+import structures.token as st
 
 
 def Main() -> int:
@@ -101,24 +102,24 @@ def RunScanner(options: ModuleOptions):
 
     with open(options.sourcePath, mode='r', encoding=options.filesEncoding) as sourceCode, \
          open(options.scannerOutputFile, mode='w', encoding=options.filesEncoding) as fileTokens:
-        token = ss.Token(ss.TokenType.ERROR, '')
+        token = st.Token(st.TokenType.ERROR, '')
         sourceScanner = ss.Scanner(
             sourceCode,
             textEchoBuffer,
             options.echoSourceLines,
             options.echoTraceScanner)
-        while token.type is not ss.TokenType.EOF:
+        while token.type is not st.TokenType.EOF:
             position, token = sourceScanner.GetToken()
             if __ShouldOutputToken(token):
                 fileTokens.write(f'{position[0]},{position[1]},{token}\n')
     return
 
-def __ShouldOutputToken(token: ss.Token) -> bool:
+def __ShouldOutputToken(token: st.Token) -> bool:
     """
     Return True if the token will be printed to scanner output.
     """
     # NOTE - reject errors token that are blanks
-    return not (token.type is  ss.TokenType.ERROR and token.value in fa_alc.blanks)
+    return not (token.type is  st.TokenType.ERROR and token.value in fa_alc.blanks)
 
 def RunParser(options: ModuleOptions):
     """

@@ -40,8 +40,8 @@ class Scanner(afd.DFA):
         self.__outTextFile = outTextFile
         self.__echoLines = echoLines
         self.__echoTrace = echoTrace
-        self.__lineNum: int = 0
-        self.__linePos: int = 0
+        self.__lineNum: int = -1
+        self.__linePos: int = -1
         self.__lineBuff: str = ''
         self.__wordRead:str = ''
         self.__wordLine = 0
@@ -80,8 +80,8 @@ class Scanner(afd.DFA):
             tokenType = TokenType.ERROR
             tokenValue = self.__wordRead
 
-        position: tuple[int, int] = (self.__wordLine, self.__wordColumn)
-        token:Token = Token(tokenType, tokenValue)
+        position: tuple[int, int] = (self.__wordLine+1, self.__wordColumn+1)
+        token: Token = Token(tokenType, tokenValue)
         if self.__echoTrace:
             self.__EchoToken(position, token)
         return position, token
@@ -115,11 +115,11 @@ class Scanner(afd.DFA):
         wordColumn = -1
 
         while True:
-            if wordLine == -1 and wordColumn == -1:
-                wordLine = self.__lineNum
-                wordColumn = self.__linePos
             try:
                 c = self.__GetNextChar()
+                if wordLine == -1 and wordColumn == -1:
+                    wordLine = self.__lineNum
+                    wordColumn = self.__linePos
 
                 input_symbol = tt.TranslateSymbols(c)
                 current_state = self._get_next_current_state(current_state, input_symbol)
@@ -167,14 +167,13 @@ class Scanner(afd.DFA):
         """
         Read next character from file.
         """
-        # NOTE -  there is a character in buffer
-        if self.__linePos < len(self.__lineBuff):
-            self.__linePos += 1
-            return self.__lineBuff[self.__linePos-1]
-        else:
-            return self.__GetNextLine()
+        while True:
+            if self.__lineBuff and self.__linePos+1 < len(self.__lineBuff):
+                self.__linePos += 1
+                return self.__lineBuff[self.__linePos]
+            self.__GetNextLine()
 
-    def __GetNextLine(self) -> str:
+    def __GetNextLine(self) -> None:
         """
         Read next line from file when the line buffer is empty.
 
@@ -184,22 +183,24 @@ class Scanner(afd.DFA):
         self.__lineBuff = self.__sourceFile.readline()
         # NOTE - chunk not empty (not EOF)
         if self.__lineBuff:
-            self.__linePos = 1
             self.__lineNum += 1
+            # NOTE - restart buffer pointer
+            self.__linePos = -1
             # NOTE - print if needed
             if self.__echoLines:
-                self.__EchoLine()
-            # NOTE - restart buffer pointer
-            return self.__lineBuff[self.__linePos-1]
+                self.__EchoLine(self.__lineNum+1, self.__lineBuff)
+            return None
         else:
             raise EOFError()
 
     def __UngetNextChar(self) -> None:
+        if self.__linePos < 0:
+            return
         self.__linePos -= 1
-        return
+        return None
 
-    def __EchoLine(self) -> None:
-        return print(f'{self.__lineNum:>4}: {self.__lineBuff}', end='' if self.__lineBuff[-1:]=='\n' else '\n', file=self.__outTextFile)
+    def __EchoLine(self, lineno: int, line: str) -> None:
+        return print(f'{lineno:>4}: {line}', end='' if line[-1:]=='\n' else '\n', file=self.__outTextFile)
 
     def __EchoToken(self,position: tuple[int,int], token: Token) -> None:
         return print(f'{position[0]:>6}.{position[1]:>02}: {token}', file=self.__outTextFile)

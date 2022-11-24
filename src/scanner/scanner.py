@@ -25,7 +25,7 @@ class Token(typing.NamedTuple):
     value: str
 
     def __str__(self) -> str:
-        return f'<{self.type.name},\'{self.value}\'>'
+        return f'<{self.type.name},"{self.value}">'
 
 
 class Scanner(afd.DFA):
@@ -44,6 +44,8 @@ class Scanner(afd.DFA):
         self.__linePos: int = 0
         self.__lineBuff: str = ''
         self.__wordRead:str = ''
+        self.__wordLine = 0
+        self.__wordColumn = 0
         self.__lastFinalStateReached: str = ''
         # ----------
         cMinus = fa_alc.dictCMinusDfas[fa_alc.CMinusDFAs.CMinus]
@@ -55,15 +57,17 @@ class Scanner(afd.DFA):
         self.allow_partial = False
         self.validate()
 
-    def GetToken(self) -> Token:
+    def GetToken(self) -> tuple[tuple[int, int], Token]:
         """
-        Return one token read from the file one token per call.
+        Return the position (line, column) and the next token read from the
+        file, one token per call.
 
-        Echo the raws read tokens if echoTrace if needed.
+        Echoing the positions and raws read tokens if echoTrace if needed.
         """
         self.__wordRead = ''
         tokenType: TokenType = TokenType.ERROR
         tokenValue: str = ''
+
         # NOTE - run automaton
         try:
             self.__ScanInputStepwise()
@@ -75,10 +79,12 @@ class Scanner(afd.DFA):
         except abe.RejectionException:
             tokenType = TokenType.ERROR
             tokenValue = self.__wordRead
-        token = Token(tokenType, tokenValue)
+
+        position: tuple[int, int] = (self.__wordLine, self.__wordColumn)
+        token:Token = Token(tokenType, tokenValue)
         if self.__echoTrace:
-            self.__EchoToken(token)
-        return token
+            self.__EchoToken(position, token)
+        return position, token
 
     def IdentifyTokenTypeByValue(self, value: str) -> TokenType:
         tokenType = TokenType.ERROR
@@ -102,16 +108,24 @@ class Scanner(afd.DFA):
         """
         word = []
         self.__lastFinalStateReached = ''
-        emptyWordAndEOF = False
-        inError = False
         current_state = self.initial_state
+        inError = False
+        emptyWordAndEOF = False
+        wordLine = -1
+        wordColumn = -1
 
         while True:
+            if wordLine == -1 and wordColumn == -1:
+                wordLine = self.__lineNum
+                wordColumn = self.__linePos
             try:
                 c = self.__GetNextChar()
-                input_symbol = tt.TranslateSymbols(c)
 
+                input_symbol = tt.TranslateSymbols(c)
                 current_state = self._get_next_current_state(current_state, input_symbol)
+
+                # NOTE - 'recognize' c
+                word.append(c)
 
                 if current_state in self.final_states:
                     self.__lastFinalStateReached = current_state
@@ -119,29 +133,30 @@ class Scanner(afd.DFA):
                     # NOTE - in error estate if current state represents the
                     # error states of all DFAs
                     inError = fa_alc.AllErrorsStatesIn(current_state)
+
                 if inError:
                     current_state = self.__lastFinalStateReached
-                    if len(word) > 0:
+                    if len(word) > 1:
                         self.__UngetNextChar()
-                    else:
-                        # NOTE - capture one character wide errors (whitespaces)
-                        word.append(c)
-                        self.__wordRead = ''.join(word)
+                        word.pop()
                     break
-                if not inError or (inError and len(word)==0):
-                    # NOTE - 'recognize' c if not in error
-                    word.append(c)
-                    self.__wordRead = ''.join(word)
             except EOFError as e:
                 # NOTE - EOF and do not started reading a word. lineBuff='<EOF>'
                 if len(word)==0:
                     emptyWordAndEOF = True
+
                 # NOTE - finish reading the word right before EOF. lineBuff='mno<EOF>'
                 # needed?
                 # else:
                 #     self.__UngetNextChar()
+
                 # NOTE - abort while loop to check the state currently in
                 break
+
+        self.__wordRead = ''.join(word)
+        self.__wordLine = wordLine
+        self.__wordColumn = wordColumn
+
         if emptyWordAndEOF:
             raise EOFError()
         else:
@@ -186,5 +201,5 @@ class Scanner(afd.DFA):
     def __EchoLine(self) -> None:
         return print(f'{self.__lineNum:>4}: {self.__lineBuff}', end='' if self.__lineBuff[-1:]=='\n' else '\n', file=self.__outTextFile)
 
-    def __EchoToken(self, token: Token) -> None:
-        return print(f'{self.__lineNum:>6}: {token}', file=self.__outTextFile)
+    def __EchoToken(self,position: tuple[int,int], token: Token) -> None:
+        return print(f'{position[0]:>6}.{position[1]:>02}: {token}', file=self.__outTextFile)

@@ -97,10 +97,10 @@ def RunScanner(options: ModuleOptions):
     """
     Scan the source file provided on options and generate the scanner output file.
     """
-    textEchoBuffer = io.StringIO()
-    textTokenBuffer = io.StringIO()
+    textEchoBuffer = options.outputTo
 
-    with open(options.sourcePath, mode='r', encoding=options.filesEncoding) as sourceCode:
+    with open(options.sourcePath, mode='r', encoding=options.filesEncoding) as sourceCode, \
+         open(options.scannerOutputFile, mode='w', encoding=options.filesEncoding) as fileTokens:
         token = ss.Token(ss.TokenType.ERROR, '')
         sourceScanner = ss.Scanner(
             sourceCode,
@@ -108,13 +108,9 @@ def RunScanner(options: ModuleOptions):
             options.echoSourceLines,
             options.echoTraceScanner)
         while token.type is not ss.TokenType.EOF:
-            token = sourceScanner.GetToken()
+            position, token = sourceScanner.GetToken()
             if __ShouldOutputToken(token):
-                textTokenBuffer.write(f'{token}\n')
-    print(textEchoBuffer.getvalue(), file=options.outputTo)
-    with open(options.scannerOutputFile, mode='w', encoding=options.filesEncoding) as fileTokens:
-        fileTokens.write(textTokenBuffer.getvalue())
-    del textTokenBuffer
+                fileTokens.write(f'{position[0]},{position[1]},{token}\n')
     return
 
 def __ShouldOutputToken(token: ss.Token) -> bool:

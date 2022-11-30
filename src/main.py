@@ -13,6 +13,7 @@ import typing
 
 import finite_automaton.automaton_language_cminus as fa_alc
 import scanner.scanner as ss
+import parser.parser as pp
 import structures.token as st
 
 
@@ -126,10 +127,14 @@ def RunParser(options: ModuleOptions):
     Parse the scanner output related to the source file provided on options and
     generate the parser output file.
     """
-    print(NotImplementedError(f'["if moduleOptions.sourceParse:" branch on {Main.__qualname__} isn\'t implemented yet]'))
-    exit(1)
-    options.parserOutputFile = f'{options.sourcePath}.{options.parserOutputFileSuffix}'
-    with open('', mode='r', encoding='utf-8') as sourceCode:
+    textEchoBuffer = options.outputTo
+
+    # print(NotImplementedError(f'["if moduleOptions.sourceParse:" branch on {Main.__qualname__} isn\'t implemented yet]'))
+    # exit(1)
+    with open(options.scannerOutputFile, mode='r', encoding=options.filesEncoding) as inputFile, \
+         open(options.sourcePath, mode='r', encoding=options.filesEncoding) as outputFile:
+        sourceParser = pp.Parser(inputFile, textEchoBuffer, options.echoTraceParser)
+        sourceParser.Parse()
         pass
     return
 

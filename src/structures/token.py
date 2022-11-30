@@ -8,9 +8,36 @@ class TokenType(enum.Enum):
     EOF = enum.auto()
     ID = enum.auto()
     NUM = enum.auto()
-    KEYWORD = enum.auto()
-    SYMBOL = enum.auto()
     COMMENT = enum.auto()
+    # NOTE - keyword
+    KEYWORD = enum.auto()
+    ELSE = 'else'
+    IF = 'if'
+    INT = 'int'
+    RETURN = 'return'
+    VOID = 'void'
+    WHILE = 'while'
+    # NOTE - symbols
+    SYMBOL = enum.auto()
+    PLUS = '+'
+    MINUS = '-'
+    MULTIPLY = '*'
+    DIVIDE = '/'
+    LESS = '<'
+    LESS_EQUAL = '<='
+    GREATER = '>'
+    GREATER_EQUAL = '>='
+    EQUAL = '=='
+    DIFFERENT = '!='
+    ASSIGNEMENT = '='
+    SEMICOLON = ';'
+    COMMA = ','
+    PARENTHESES_OPEN = '('
+    PARENTHESES_CLOSE = ')'
+    SQUARE_BRACKET_OPEN = '['
+    SQUARE_BRACKET_CLOSE = ']'
+    CURLY_BRACKETS_OPEN = '{'
+    CURLY_BRACKETS_CLOSE = '}'
 
 
 class Token(typing.NamedTuple):

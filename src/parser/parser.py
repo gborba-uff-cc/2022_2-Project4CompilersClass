@@ -1,12 +1,18 @@
 import typing
-import structures.token as ts
+import structures.token as st
+import structures.parser_tree_node as sp
+
+
+class ParserSyntaxError(SyntaxError):
+    def __init__(self, *args: object) -> None:
+        super().__init__(*args)
 
 
 class Parser():
     def __init__(self) -> None:
-        self.__tokens: typing.Sequence[ts.Token] = []
-        self.__tokensI: int = 0
-        self.__currentToken: ts.Token = self.__GetNextToken()
+        self.__tokens: typing.Sequence[st.Token] = []
+        self.__currentTokenI: int = 0
+        self.__currentToken: st.Token = self.__GetNextToken()
         return None
 
     def Parse(self) -> None:
@@ -14,11 +20,11 @@ class Parser():
         """
         try:
             self.__NT_Program()
-        except SyntaxError:
+        except ParserSyntaxError:
             ...
         return None
 
-    def __Match(self, expected: ts.TokenType):
+    def __Match(self, expected: st.TokenType):
         """
         """
         if (self.__currentToken.type is expected):
@@ -32,13 +38,13 @@ class Parser():
         """
         Raise a syntatic error with message describing it.
         """
-        raise SyntaxError(message)
+        raise ParserSyntaxError(message)
 
-    def __GetNextToken(self) -> ts.Token:
+    def __GetNextToken(self) -> st.Token:
         """
         Return the next token.
         """
-        token = self.__currentToken = self.__tokens[self.__tokensI]
-        self.__tokensI += 1
+        token = self.__currentToken = self.__tokens[self.__currentTokenI]
+        self.__currentTokenI += 1
         return token
 

@@ -40,10 +40,21 @@ class TokenType(enum.Enum):
     CURLY_BRACKETS_CLOSE = '}'
 
 
-class Token(typing.NamedTuple):
-    type: TokenType
-    value: str
+class Token():
+    def __init__(
+        self,
+        type: TokenType = TokenType.ERROR,
+        value: str = '',
+        lineNo: int = -1,
+        columnNo: int = -1
+    ) -> None:
+        self.type = type
+        self.value = value
+        self.lineNo = lineNo
+        self.columnNo = columnNo
+        return None
 
     def __str__(self) -> str:
-        return f'<{self.type.name},"{self.value}">'
+        return f'<{self.lineNo},{self.columnNo},{self.type.name},"{self.value}">'
+
 

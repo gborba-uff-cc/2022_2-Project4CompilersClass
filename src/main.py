@@ -109,9 +109,9 @@ def RunScanner(options: ModuleOptions):
             options.echoSourceLines,
             options.echoTraceScanner)
         while token.type is not st.TokenType.EOF:
-            position, token = sourceScanner.GetToken()
+            token = sourceScanner.GetToken()
             if __ShouldOutputToken(token):
-                fileTokens.write(f'{position[0]},{position[1]},{token}\n')
+                fileTokens.write(f'{token}\n')
     return
 
 def __ShouldOutputToken(token: st.Token) -> bool:

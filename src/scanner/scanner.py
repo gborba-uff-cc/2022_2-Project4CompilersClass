@@ -38,7 +38,7 @@ class Scanner(afd.DFA):
         self.allow_partial = False
         self.validate()
 
-    def GetToken(self) -> tuple[tuple[int, int], st.Token]:
+    def GetToken(self) -> st.Token:
         """
         Return the position (line, column) and the next token read from the
         file, one token per call.
@@ -61,11 +61,10 @@ class Scanner(afd.DFA):
             tokenType = st.TokenType.ERROR
             tokenValue = self.__wordRead
 
-        position: tuple[int, int] = (self.__wordLine+1, self.__wordColumn+1)
-        token: st.Token = st.Token(tokenType, tokenValue)
+        token: st.Token = st.Token(tokenType, tokenValue, self.__wordLine+1, self.__wordColumn+1)
         if self.__echoTrace:
-            self.__EchoToken(position, token)
-        return position, token
+            self.__EchoToken(token)
+        return token
 
     def IdentifyTokenTypeByValue(self, value: str) -> st.TokenType:
         tokenType = st.TokenType.ERROR
@@ -181,5 +180,5 @@ class Scanner(afd.DFA):
     def __EchoLine(self, lineno: int, line: str) -> None:
         return print(f'{lineno:>4}: {line}', end='' if line[-1:]=='\n' else '\n', file=self.__outTextFile)
 
-    def __EchoToken(self,position: tuple[int,int], token: st.Token) -> None:
-        return print(f'{position[0]:>6}.{position[1]:>02}: {token}', file=self.__outTextFile)
+    def __EchoToken(self, token: st.Token) -> None:
+        return print(f'{token.lineNo:>6}.{token.columnNo:>02}: {token}', file=self.__outTextFile)

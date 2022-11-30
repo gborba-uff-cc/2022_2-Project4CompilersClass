@@ -57,4 +57,33 @@ class Token():
     def __str__(self) -> str:
         return f'<{self.lineNo},{self.columnNo},{self.type.name},"{self.value}">'
 
+    def FromStr(self, s: str) -> None:
+        _, _, s = s.partition('<')
+        s, _, _ = s.partition('>')
+        lineNoStr, _, s = s.partition(',')
+        lineNo = int(lineNoStr)
 
+        columnNoStr, _, s = s.partition(',')
+        columnNo = int(columnNoStr)
+
+        typeName, _, s = s.partition(',')
+        type = self.__GetTypeByTypeName(typeName)
+
+        value = s.strip('"')
+
+        self.type = type
+        self.value = value
+        self.lineNo = lineNo
+        self.columnNo = columnNo
+        return None
+
+    @staticmethod
+    def __GetTypeByTypeName(name: str) -> TokenType:
+        """
+        Return the token type by its name.
+        """
+        tokenType: TokenType = TokenType.ERROR
+        for tt in TokenType:
+            if name == tt.name:
+                return tt
+        return tokenType

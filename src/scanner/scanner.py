@@ -70,17 +70,15 @@ class Scanner(afd.DFA):
     def IdentifyTokenTypeByValue(self, value: str) -> st.TokenType:
         tokenType = st.TokenType.ERROR
         for dfaType, M in fa_alc.dictCMinusDfas.items():
-            if M.accepts_input(value):
-                if dfaType is fa_alc.CMinusDFAs.Keywords:
-                    tokenType = st.TokenType.KEYWORD
-                elif dfaType is fa_alc.CMinusDFAs.Identifiers:
-                    tokenType = st.TokenType.ID
-                elif dfaType is fa_alc.CMinusDFAs.Numbers:
-                    tokenType = st.TokenType.NUM
-                elif dfaType is fa_alc.CMinusDFAs.Operators:
-                    tokenType = st.TokenType.SYMBOL
-                elif dfaType is fa_alc.CMinusDFAs.Comments:
-                    tokenType = st.TokenType.COMMENT
+            if dfaType in {fa_alc.CMinusDFAs.Identifiers, fa_alc.CMinusDFAs.Numbers} and \
+                M.accepts_input(value):
+                    if dfaType is fa_alc.CMinusDFAs.Identifiers:
+                        return st.TokenType.ID
+                    else:
+                        return st.TokenType.NUM
+        for tt in st.TokenType:
+            if value == tt.value:
+                return tt
         return tokenType
 
     def __ScanInputStepwise(self) -> None:

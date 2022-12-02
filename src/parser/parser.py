@@ -21,7 +21,7 @@ class Parser():
         self.__echoTrace = echoTrace
 
         self.__tokens: typing.Sequence[st.Token] = []
-        self.__currentTokenI: int = 0
+        self.__currentTokenI: int = -1
         self.__currentToken: st.Token = st.Token()
 
         # NOTE - load tokens
@@ -45,6 +45,7 @@ class Parser():
         """
         try:
             self.__NT_Program()
+            print('Succesfully parsed the source file.',file=self.__ouTextFile)
         except ParserSyntaxError as pse:
             print(pse)
         return sp.ParserTreeNode()
@@ -55,7 +56,7 @@ class Parser():
         if (self.__currentToken.type is expected):
             self.__currentToken = self.__GetNextToken()
         else:
-            self.__Error(f'Could not match the actual token "{self.__currentToken}" at line {self.__currentToken.lineNo}.{self.__currentToken.columnNo} ')
+            self.__Error(f'Could not match the actual token "{self.__currentToken.value}" at line {self.__currentToken.lineNo}.{self.__currentToken.columnNo} ')
         return None
 
     @staticmethod
@@ -69,10 +70,15 @@ class Parser():
         """
         Return the next token.
         """
-        token = self.__currentToken = self.__tokens[self.__currentTokenI]
         self.__currentTokenI += 1
+        token = self.__currentToken = self.__tokens[self.__currentTokenI]
         return token
 
+    def __SetCurrentToken(self, tokenI: int) -> None:
+        self.__currentTokenI = tokenI
+        self.__currentToken = self.__tokens[self.__currentTokenI]
+        return None
+    # ------------------------------
     # NOTE - NON TERMINALS
     def __NT_Program(self) -> sp.ParserTreeNode:
         n = sp.ParserTreeNode()
@@ -91,9 +97,10 @@ class Parser():
         try:
             self.__NT_Declaration()
             self.__NT_DeclarationList1()
+            return n
         except ParserSyntaxError:
             pass
-        self.__currentTokenI = currentI
+        self.__SetCurrentToken(currentI)
         return n
 
     def __NT_Declaration(self) -> sp.ParserTreeNode:
@@ -104,7 +111,7 @@ class Parser():
             return n
         except ParserSyntaxError:
             pass
-        self.__currentTokenI = currentI
+        self.__SetCurrentToken(currentI)
         self.__NT_FunDeclaration()
         return n
 
@@ -123,7 +130,7 @@ class Parser():
             return n
         except ParserSyntaxError:
             pass
-        self.__currentTokenI = currentI
+        self.__SetCurrentToken(currentI)
         self.__T_SquareBracketsOpen()
         self.__T_Num()
         self.__T_SquareBracketsClose()
@@ -138,7 +145,7 @@ class Parser():
             return n
         except ParserSyntaxError:
             pass
-        self.__currentTokenI = currentI
+        self.__SetCurrentToken(currentI)
         self.__T_Void()
         return n
 
@@ -155,7 +162,7 @@ class Parser():
             return n
         except:
             pass
-        self.__currentTokenI = currentI
+        self.__SetCurrentToken(currentI)
         self.__T_Void()
         self.__T_Id()
         self.__T_ParenthesesOpen()
@@ -172,7 +179,7 @@ class Parser():
             return n
         except ParserSyntaxError:
             pass
-        self.__currentTokenI = currentI
+        self.__SetCurrentToken(currentI)
         self.__T_Void()
         return n
 
@@ -189,9 +196,10 @@ class Parser():
             self.__T_Comma()
             self.__NT_Param()
             self.__NT_ParamList1()
+            return n
         except ParserSyntaxError:
             pass
-        self.__currentTokenI = currentI
+        self.__SetCurrentToken(currentI)
         return n
 
     def __NT_Param(self) -> sp.ParserTreeNode:
@@ -201,9 +209,10 @@ class Parser():
             self.__T_Int()
             self.__T_Id()
             self.__NT_Param1()
+            return n
         except ParserSyntaxError:
             pass
-        self.__currentTokenI = currentI
+        self.__SetCurrentToken(currentI)
         self.__T_Void()
         self.__T_Id()
         self.__NT_Param1()
@@ -215,9 +224,10 @@ class Parser():
         try:
             self.__T_SquareBracketsOpen()
             self.__T_SquareBracketsClose()
+            return n
         except ParserSyntaxError:
             pass
-        self.__currentTokenI = currentI
+        self.__SetCurrentToken(currentI)
         return n
 
     def __NT_CompoundStmt(self) -> sp.ParserTreeNode:
@@ -244,14 +254,14 @@ class Parser():
         except ParserSyntaxError:
             pass
         try:
-            self.__currentTokenI = currentI
+            self.__SetCurrentToken(currentI)
             self.__T_Void()
             self.__T_Id()
             self.__NT_LocalDeclarations2()
             return n
         except ParserSyntaxError:
             pass
-        self.__currentTokenI = currentI
+        self.__SetCurrentToken(currentI)
         return n
 
     def __NT_LocalDeclarations2(self):
@@ -263,7 +273,7 @@ class Parser():
             return n
         except ParserSyntaxError:
             pass
-        self.__currentTokenI = currentI
+        self.__SetCurrentToken(currentI)
         self.__T_SquareBracketsOpen()
         self.__T_Num()
         self.__T_SquareBracketsClose()
@@ -285,7 +295,7 @@ class Parser():
             return n
         except ParserSyntaxError:
             pass
-        self.__currentTokenI = currentI
+        self.__SetCurrentToken(currentI)
         return n
 
     def __NT_Statement(self) -> sp.ParserTreeNode:
@@ -297,7 +307,7 @@ class Parser():
         except ParserSyntaxError:
             pass
         try:
-            self.__currentTokenI = currentI
+            self.__SetCurrentToken(currentI)
             self.__T_CurlyBracketsOpen()
             self.__NT_LocalDeclarations()
             self.__NT_StatementList()
@@ -306,18 +316,18 @@ class Parser():
         except ParserSyntaxError:
             pass
         try:
-            self.__currentTokenI = currentI
+            self.__SetCurrentToken(currentI)
             self.__NT_SelectionStmt()
             return n
         except ParserSyntaxError:
             pass
         try:
-            self.__currentTokenI = currentI
+            self.__SetCurrentToken(currentI)
             self.__NT_IterationStmt()
             return n
         except ParserSyntaxError:
             pass
-        self.__currentTokenI = currentI
+        self.__SetCurrentToken(currentI)
         self.__NT_ReturnStmt()
         return n
 
@@ -330,7 +340,7 @@ class Parser():
             return n
         except ParserSyntaxError:
             pass
-        self.__currentTokenI = currentI
+        self.__SetCurrentToken(currentI)
         self.__T_Semicolon()
         return n
 
@@ -353,7 +363,7 @@ class Parser():
             return n
         except ParserSyntaxError:
             pass
-        self.__currentTokenI = currentI
+        self.__SetCurrentToken(currentI)
         return n
 
     def __NT_IterationStmt(self) -> sp.ParserTreeNode:
@@ -379,7 +389,7 @@ class Parser():
             return n
         except:
             pass
-        self.__currentTokenI = currentI
+        self.__SetCurrentToken(currentI)
         self.__NT_Expression()
         self.__T_Semicolon()
         return n
@@ -394,7 +404,7 @@ class Parser():
             return n
         except ParserSyntaxError:
             pass
-        self.__currentTokenI = currentI
+        self.__SetCurrentToken(currentI)
         self.__NT_SimpleExpression()
         return n
 
@@ -414,7 +424,7 @@ class Parser():
             return n
         except ParserSyntaxError:
             pass
-        self.__currentTokenI = currentI
+        self.__SetCurrentToken(currentI)
         return n
 
     def __NT_SimpleExpression(self) -> sp.ParserTreeNode:
@@ -432,7 +442,7 @@ class Parser():
             return n
         except ParserSyntaxError:
             pass
-        self.__currentTokenI = currentI
+        self.__SetCurrentToken(currentI)
         return n
 
     def __NT_Relop(self) -> sp.ParserTreeNode:
@@ -444,30 +454,30 @@ class Parser():
         except ParserSyntaxError:
             pass
         try:
-            self.__currentTokenI = currentI
+            self.__SetCurrentToken(currentI)
             self.__T_Less()
             return n
         except ParserSyntaxError:
             pass
         try:
-            self.__currentTokenI = currentI
+            self.__SetCurrentToken(currentI)
             self.__T_Greater()
             return n
         except ParserSyntaxError:
             pass
         try:
-            self.__currentTokenI = currentI
+            self.__SetCurrentToken(currentI)
             self.__T_GreaterEqual()
             return n
         except ParserSyntaxError:
             pass
         try:
-            self.__currentTokenI = currentI
+            self.__SetCurrentToken(currentI)
             self.__T_Equal()
             return n
         except ParserSyntaxError:
             pass
-        self.__currentTokenI = currentI
+        self.__SetCurrentToken(currentI)
         self.__T_Different()
         return n
 
@@ -487,7 +497,7 @@ class Parser():
             return n
         except ParserSyntaxError:
             pass
-        self.__currentTokenI = currentI
+        self.__SetCurrentToken(currentI)
         return n
 
     def __NT_Addop(self) -> sp.ParserTreeNode:
@@ -498,7 +508,7 @@ class Parser():
             return n
         except ParserSyntaxError:
             pass
-        self.__currentTokenI = currentI
+        self.__SetCurrentToken(currentI)
         self.__T_Minus()
         return n
 
@@ -518,7 +528,7 @@ class Parser():
             return n
         except ParserSyntaxError:
             pass
-        self.__currentTokenI = currentI
+        self.__SetCurrentToken(currentI)
         return n
 
     def __NT_Mulop(self) -> sp.ParserTreeNode:
@@ -529,7 +539,7 @@ class Parser():
             return n
         except ParserSyntaxError:
             pass
-        self.__currentTokenI = currentI
+        self.__SetCurrentToken(currentI)
         self.__T_Divide()
         return n
 
@@ -544,19 +554,19 @@ class Parser():
         except ParserSyntaxError:
             pass
         try:
-            self.__currentTokenI = currentI
+            self.__SetCurrentToken(currentI)
             self.__T_Id()
             self.__NT_Factor1()
             return n
         except ParserSyntaxError:
             pass
         try:
-            self.__currentTokenI = currentI
+            self.__SetCurrentToken(currentI)
             self.__NT_Call()
             return n
         except ParserSyntaxError:
             pass
-        self.__currentTokenI = currentI
+        self.__SetCurrentToken(currentI)
         self.__T_Num()
         return n
 
@@ -567,9 +577,10 @@ class Parser():
             self.__T_SquareBracketsOpen()
             self.__NT_Expression()
             self.__T_SquareBracketsClose()
+            return n
         except ParserSyntaxError:
             pass
-        self.__currentTokenI = currentI
+        self.__SetCurrentToken(currentI)
         return n
 
     def __NT_Call(self) -> sp.ParserTreeNode:
@@ -588,7 +599,7 @@ class Parser():
             return n
         except ParserSyntaxError:
             pass
-        self.__currentTokenI = currentI
+        self.__SetCurrentToken(currentI)
         return n
 
     def __NT_ArgList(self) -> sp.ParserTreeNode:
@@ -601,7 +612,7 @@ class Parser():
         except ParserSyntaxError:
             pass
         try:
-            self.__currentTokenI = currentI
+            self.__SetCurrentToken(currentI)
             self.__T_ParenthesesOpen()
             self.__NT_Expression()
             self.__T_ParenthesesClose()
@@ -611,7 +622,7 @@ class Parser():
             return n
         except ParserSyntaxError:
             pass
-        self.__currentTokenI = currentI
+        self.__SetCurrentToken(currentI)
         self.__T_Num()
         self.__NT_Term1()
         self.__NT_AdditiveExpression1()
@@ -628,7 +639,7 @@ class Parser():
             return n
         except:
             pass
-        self.__currentTokenI = currentI
+        self.__SetCurrentToken(currentI)
         return n
 
     def __NT_ArgList2(self) -> sp.ParserTreeNode:
@@ -642,7 +653,7 @@ class Parser():
         except ParserSyntaxError:
             pass
         try:
-            self.__currentTokenI = currentI
+            self.__SetCurrentToken(currentI)
             self.__T_SquareBracketsOpen()
             self.__NT_Expression()
             self.__T_SquareBracketsClose()
@@ -651,14 +662,14 @@ class Parser():
         except ParserSyntaxError:
             pass
         try:
-            self.__currentTokenI = currentI
+            self.__SetCurrentToken(currentI)
             self.__NT_Term1()
             self.__NT_AdditiveExpression1()
             self.__NT_ArgList3()
             return n
         except ParserSyntaxError:
             pass
-        self.__currentTokenI = currentI
+        self.__SetCurrentToken(currentI)
         self.__T_ParenthesesOpen()
         self.__NT_Args()
         self.__T_ParenthesesClose()
@@ -677,7 +688,7 @@ class Parser():
             return n
         except ParserSyntaxError:
             pass
-        self.__currentTokenI = currentI
+        self.__SetCurrentToken(currentI)
         self.__NT_ArgList1()
         return n
 
@@ -691,7 +702,7 @@ class Parser():
             return n
         except ParserSyntaxError:
             pass
-        self.__currentTokenI = currentI
+        self.__SetCurrentToken(currentI)
         self.__NT_Term1()
         self.__NT_AdditiveExpression1()
         self.__NT_ArgList3()

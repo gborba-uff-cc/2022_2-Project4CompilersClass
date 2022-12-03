@@ -10,7 +10,6 @@ class TokenType(enum.Enum):
     NUM = enum.auto()
     COMMENT = enum.auto()
     # NOTE - keyword
-    KEYWORD = enum.auto()
     ELSE = 'else'
     IF = 'if'
     INT = 'int'
@@ -18,7 +17,6 @@ class TokenType(enum.Enum):
     VOID = 'void'
     WHILE = 'while'
     # NOTE - symbols
-    SYMBOL = enum.auto()
     PLUS = '+'
     MINUS = '-'
     MULTIPLY = '*'

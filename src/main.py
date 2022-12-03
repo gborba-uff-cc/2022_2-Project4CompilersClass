@@ -3,7 +3,7 @@ Compiler front-end entry point
 '''
 
 # run with:
-# python -B -OO .\src\main.py .\input.cm --sourceScan --echoSourceLines --echoTraceScanner
+# python -B -OO .\src\main.py .\input.cm --sourceScan --echoSourceLines --echoTraceScanner --sourceParse --echoTraceParser
 
 import argparse
 import dataclasses

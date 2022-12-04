@@ -4,33 +4,29 @@ import structures.token as st
 import structures.parser_tree_node as sp
 
 
+def SyntaxErrorText(
+    msg: str,
+    filename: str,
+    currentToken: st.Token,
+    previousToken: st.Token | None = None
+) -> str:
+    currentTokenText: str = f'the token \"{currentToken.value}\" @ {currentToken.lineNo}.{currentToken.columnNo} was not recognized'
+    previousTokenText: str = ''
+    if previousToken:
+        previousTokenText = f', the last recognized token was \"{previousToken.value}\" @ {previousToken.lineNo}.{previousToken.columnNo}\n'
+    hintText = f'Read the tokens as: (token) (@: at) (lineNo).(columnNo)'
+    return f'{msg}\nOn the file {filename if filename else ""}{currentTokenText}{previousTokenText}{hintText}'
+
 class ParserInvalidOptionError(SyntaxError):
     def __init__(self, *args: object) -> None:
         super().__init__(*args)
+        if self.filename is None:
+            self.filename: str = ''
+        self.aToken: st.Token = st.Token()
         self.previousToken: st.Token | None = None
 
     def __str__(self) -> str:
-        currentTokenText: str = f'the token:\n\t{self.filename} -> \"{self.text}\" @ {self.lineno}.{self.offset}\n'
-        previousTokenText: str = ''
-        if self.previousToken:
-            previousTokenText = f'after the token:\n\t{self.filename} -> \"{self.previousToken.value}\" @ {self.previousToken.lineNo}.{self.previousToken.columnNo}\n'
-        hintText = f'read them as:\n\t(filename) -> (token) @ (lineNo).(columnNo)'
-        return f'{self.msg}\n{currentTokenText}{previousTokenText}{hintText}'
-
-
-class ParserExhaustedOptionsError(SyntaxError):
-    def __init__(self, *args: object) -> None:
-        super().__init__(*args)
-        self.previousToken: st.Token | None = None
-
-    def __str__(self) -> str:
-        currentTokenText: str = f'the token:\n\t{self.filename} -> \"{self.text}\" @ {self.lineno}.{self.offset}\n'
-        previousTokenText: str = ''
-        if self.previousToken:
-            previousTokenText = f'after the token:\n\t{self.filename} -> \"{self.previousToken.value}\" @ {self.previousToken.lineNo}.{self.previousToken.columnNo}\n'
-        hintText = f'read them as:\n\t(filename) -> (token) @ (lineNo).(columnNo)'
-        return f'{self.msg}\n{currentTokenText}{previousTokenText}{hintText}'
-
+        return SyntaxErrorText(self.msg, self.filename,self.aToken,self.previousToken)
 
 
 class Parser():
@@ -68,15 +64,19 @@ class Parser():
     def Parse(self) -> sp.ParserTreeNode:
         """
         """
+        n = sp.ParserTreeNode()
         try:
-            self.__NT_Program()
+            n = self.__NT_Program()
+        except EOFError:  # NOTE - reached the end of file
             print('Succesfully parsed the source file.',file=self.__ouTextFile)
-        except ParserInvalidOptionError as pioe:
-            print('ParserInvalidOptionError', pioe)
-        except ParserExhaustedOptionsError as peo:
-            print('ParserExhaustdOptions\n', peo)
-        print(f'{self.__currentTokenI=}{self.__tokens[self.__currentTokenI]=}')
-        return sp.ParserTreeNode()
+        except ParserInvalidOptionError:
+            # NOTE - capture parse error on the first declaration on program but
+            # don't treat it
+            pass
+        finally:
+            if self.__currentTokenI+1 != len(self.__tokens):
+                print(SyntaxErrorText('Couldn\'t completely parse the source file.', '', self.__tokens[self.__furthestTokenReadI],  self.__tokens[self.__furthestTokenReadI-1]))
+        return n
 
     def __Match(self, expected: st.TokenType):
         """
@@ -84,21 +84,12 @@ class Parser():
         if (self.__currentToken.type is expected):
             self.__currentToken = self.__GetNextToken()
         else:
-            # self.__Error(f'Could not match the actual token "{self.__currentToken.value}" at line {self.__currentToken.lineNo}.{self.__currentToken.columnNo} ')
             furthestToken: st.Token = self.__tokens[self.__furthestTokenReadI]
             previousToken: st.Token | None = None
             if self.__furthestTokenReadI>0:
                 previousToken = self.__tokens[self.__furthestTokenReadI-1]
-            # self.__Error(f'Couldn\'t match the token "{furthestToken.value}" at line {furthestToken.lineNo}.{furthestToken.columnNo} ')
             self.__UnexpectedTokenError('Couldn\'t match a token', furthestToken, previousToken)
         return None
-
-    # @staticmethod
-    # def __Error(message: str):
-    #     """
-    #     Raise a syntatic error with message describing it.
-    #     """
-    #     raise ParserSyntaxError(message)
 
     @staticmethod
     def __UnexpectedTokenError(
@@ -109,31 +100,8 @@ class Parser():
         """
         Raise a syntatic error with message describing it.
         """
-        error = ParserInvalidOptionError(
-            msg, (
-            '',              # SyntaxError.filename
-            currentToken.lineNo,    # SyntaxError.lineno
-            currentToken.columnNo,  # SyntaxError.offset
-            currentToken.value      # SyntaxError.text
-            ))
-        error.previousToken = previousToken
-        raise error
-
-    def __ExhaustedOptionsError(
-        self,
-        msg: str
-    ) -> typing.NoReturn:
-        furthestToken: st.Token = self.__tokens[self.__furthestTokenReadI]
-        previousToken: st.Token | None = None
-        if self.__furthestTokenReadI>0:
-            previousToken = self.__tokens[self.__furthestTokenReadI-1]
-        error = ParserExhaustedOptionsError(
-            msg, (
-            '',              # SyntaxError.filename
-            furthestToken.lineNo,    # SyntaxError.lineno
-            furthestToken.columnNo,  # SyntaxError.offset
-            furthestToken.value      # SyntaxError.text
-            ))
+        error = ParserInvalidOptionError(msg)
+        error.aToken = currentToken
         error.previousToken = previousToken
         raise error
 
@@ -145,6 +113,8 @@ class Parser():
         token = self.__currentToken = self.__tokens[self.__currentTokenI]
         if self.__furthestTokenReadI < self.__currentTokenI:
             self.__furthestTokenReadI = self.__currentTokenI
+        if self.__currentToken.type is st.TokenType.EOF:
+            raise EOFError()
         return token
 
     def __SetCurrentToken(self, tokenI: int) -> None:
@@ -155,16 +125,9 @@ class Parser():
     # NOTE - NON TERMINALS
     def __NT_Program(self) -> sp.ParserTreeNode:
         n = sp.ParserTreeNode()
-        try:
-            self.__NT_Declaration()
-            self.__NT_DeclarationList()
-            return n
-# ------
-        except ParserInvalidOptionError:
-            pass
-        #NOTE - not optional production
-        self.__ExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_Program.__qualname__.split(".__")[-1]}')
-        raise ParserExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_Program.__qualname__.split(".__")[-1]}')
+        self.__NT_Declaration()
+        self.__NT_DeclarationList()
+        return n
 
     def __NT_DeclarationList(self) -> sp.ParserTreeNode:
         #NOTE - optional production
@@ -174,10 +137,6 @@ class Parser():
             self.__NT_Declaration()
             self.__NT_DeclarationList()
             return n
-        # NOTE - can ignore exhausted options because there is at least one more
-        # production in this non terminal, or this non terminal is optional
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
         self.__SetCurrentToken(currentI)
@@ -191,21 +150,13 @@ class Parser():
             self.__T_Id()
             self.__NT_Declaration1()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
-        try:
-            self.__SetCurrentToken(currentI)
-            self.__T_Void()
-            self.__T_Id()
-            self.__NT_Declaration1()
-            return n
-        except ParserInvalidOptionError:
-            pass
-        #NOTE - not optional production
-        self.__ExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_Declaration.__qualname__.split(".__")[-1]}')
-        raise ParserExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_Declaration.__qualname__.split(".__")[-1]}')
+        self.__SetCurrentToken(currentI)
+        self.__T_Void()
+        self.__T_Id()
+        self.__NT_Declaration1()
+        return n
 
     def __NT_Declaration1(self) -> sp.ParserTreeNode:
         n = sp.ParserTreeNode()
@@ -213,8 +164,6 @@ class Parser():
         try:
             self.__T_Semicolon()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
         try:
@@ -224,22 +173,14 @@ class Parser():
             self.__T_SquareBracketsClose()
             self.__T_Semicolon()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
-        try:
-            self.__SetCurrentToken(currentI)
-            self.__T_ParenthesesOpen()
-            self.__NT_Params()
-            self.__T_ParenthesesClose()
-            self.__NT_CompoundStmt()
-            return n
-        except ParserInvalidOptionError:
-            pass
-        #NOTE - not optional production
-        self.__ExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_Declaration1.__qualname__.split(".__")[-1]}')
-        raise ParserExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_Declaration1.__qualname__.split(".__")[-1]}')
+        self.__SetCurrentToken(currentI)
+        self.__T_ParenthesesOpen()
+        self.__NT_Params()
+        self.__T_ParenthesesClose()
+        self.__NT_CompoundStmt()
+        return n
 
     def __NT_Params(self) -> sp.ParserTreeNode:
         n = sp.ParserTreeNode()
@@ -248,19 +189,11 @@ class Parser():
             self.__NT_Param()
             self.__NT_ParamList()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
-        try:
-            self.__SetCurrentToken(currentI)
-            self.__T_Void()
-            return n
-        except ParserInvalidOptionError:
-            pass
-        #NOTE - not optional production
-        self.__ExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_Params.__qualname__.split(".__")[-1]}')
-        raise ParserExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_Params.__qualname__.split(".__")[-1]}')
+        self.__SetCurrentToken(currentI)
+        self.__T_Void()
+        return n
 
     def __NT_ParamList(self) -> sp.ParserTreeNode:
         #NOTE - optional production
@@ -271,8 +204,6 @@ class Parser():
             self.__NT_Param()
             self.__NT_ParamList()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
         self.__SetCurrentToken(currentI)
@@ -286,21 +217,13 @@ class Parser():
             self.__T_Id()
             self.__NT_Param1()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
-        try:
-            self.__SetCurrentToken(currentI)
-            self.__T_Void()
-            self.__T_Id()
-            self.__NT_Param1()
-            return n
-        except ParserInvalidOptionError:
-            pass
-        #NOTE - not optional production
-        self.__ExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_Param.__qualname__.split(".__")[-1]}')
-        raise ParserExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_Param.__qualname__.split(".__")[-1]}')
+        self.__SetCurrentToken(currentI)
+        self.__T_Void()
+        self.__T_Id()
+        self.__NT_Param1()
+        return n
 
     def __NT_Param1(self) -> sp.ParserTreeNode:
         #NOTE - optional production
@@ -310,8 +233,6 @@ class Parser():
             self.__T_SquareBracketsOpen()
             self.__T_SquareBracketsClose()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
         self.__SetCurrentToken(currentI)
@@ -319,17 +240,11 @@ class Parser():
 
     def __NT_CompoundStmt(self) -> sp.ParserTreeNode:
         n = sp.ParserTreeNode()
-        try:
-            self.__T_CurlyBracketsOpen()
-            self.__NT_LocalDeclarations()
-            self.__NT_StatementList()
-            self.__T_CurlyBracketsClose()
-            return n
-        except ParserInvalidOptionError:
-            pass
-        #NOTE - not optional production
-        self.__ExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_CompoundStmt.__qualname__.split(".__")[-1]}')
-        raise ParserExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_CompoundStmt.__qualname__.split(".__")[-1]}')
+        self.__T_CurlyBracketsOpen()
+        self.__NT_LocalDeclarations()
+        self.__NT_StatementList()
+        self.__T_CurlyBracketsClose()
+        return n
 
     def __NT_LocalDeclarations(self) -> sp.ParserTreeNode:
         #NOTE - optional production
@@ -340,8 +255,6 @@ class Parser():
             self.__T_Id()
             self.__NT_LocalDeclarations1()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
         try:
@@ -350,8 +263,6 @@ class Parser():
             self.__T_Id()
             self.__NT_LocalDeclarations1()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
         self.__SetCurrentToken(currentI)
@@ -364,23 +275,15 @@ class Parser():
             self.__T_Semicolon()
             self.__NT_LocalDeclarations()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
-        try:
-            self.__SetCurrentToken(currentI)
-            self.__T_SquareBracketsOpen()
-            self.__T_Num()
-            self.__T_SquareBracketsClose()
-            self.__T_Semicolon()
-            self.__NT_LocalDeclarations()
-            return n
-        except ParserInvalidOptionError:
-            pass
-        #NOTE - not optional production
-        self.__ExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_LocalDeclarations1.__qualname__.split(".__")[-1]}')
-        raise ParserExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_LocalDeclarations1.__qualname__.split(".__")[-1]}')
+        self.__SetCurrentToken(currentI)
+        self.__T_SquareBracketsOpen()
+        self.__T_Num()
+        self.__T_SquareBracketsClose()
+        self.__T_Semicolon()
+        self.__NT_LocalDeclarations()
+        return n
 
     def __NT_StatementList(self) -> sp.ParserTreeNode:
         #NOTE - optional production
@@ -390,8 +293,6 @@ class Parser():
             self.__NT_Statement()
             self.__NT_StatementList()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
         self.__SetCurrentToken(currentI)
@@ -403,8 +304,6 @@ class Parser():
         try:
             self.__NT_Statement1()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
         try:
@@ -414,8 +313,6 @@ class Parser():
             self.__NT_StatementList()
             self.__T_CurlyBracketsClose()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
         try:
@@ -427,8 +324,6 @@ class Parser():
             self.__NT_Statement()
             self.__NT_Statement2()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
         try:
@@ -439,20 +334,12 @@ class Parser():
             self.__T_ParenthesesClose()
             self.__NT_Statement()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
-        try:
-            self.__SetCurrentToken(currentI)
-            self.__T_Return()
-            self.__NT_Statement1()
-            return n
-        except ParserInvalidOptionError:
-            pass
-        #NOTE - not optional production
-        self.__ExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_Statement.__qualname__.split(".__")[-1]}')
-        raise ParserExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_Statement.__qualname__.split(".__")[-1]}')
+        self.__SetCurrentToken(currentI)
+        self.__T_Return()
+        self.__NT_Statement1()
+        return n
 
     def __NT_Statement1(self) -> sp.ParserTreeNode:
         n = sp.ParserTreeNode()
@@ -461,19 +348,11 @@ class Parser():
             self.__NT_Expression()
             self.__T_Semicolon()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
-        try:
-            self.__SetCurrentToken(currentI)
-            self.__T_Semicolon()
-            return n
-        except ParserInvalidOptionError:
-            pass
-        #NOTE - not optional production
-        self.__ExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_Statement1.__qualname__.split(".__")[-1]}')
-        raise ParserExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_Statement1.__qualname__.split(".__")[-1]}')
+        self.__SetCurrentToken(currentI)
+        self.__T_Semicolon()
+        return n
 
     def __NT_Statement2(self) -> sp.ParserTreeNode:
         #NOTE - optional production
@@ -483,8 +362,6 @@ class Parser():
             self.__T_Else()
             self.__NT_Statement()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
         self.__SetCurrentToken(currentI)
@@ -498,43 +375,23 @@ class Parser():
             self.__T_Assignement()
             self.__NT_Expression()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
-        try:
-            self.__SetCurrentToken(currentI)
-            self.__NT_SimpleExpression()
-            return n
-        except ParserInvalidOptionError:
-            pass
-        #NOTE - not optional production
-        self.__ExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_Expression.__qualname__.split(".__")[-1]}')
-        raise ParserExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_Expression.__qualname__.split(".__")[-1]}')
+        self.__SetCurrentToken(currentI)
+        self.__NT_SimpleExpression()
+        return n
 
     def __NT_Var(self) -> sp.ParserTreeNode:
         n = sp.ParserTreeNode()
-        try:
-            self.__T_Id()
-            self.__NT_Factor1_OR_Var1()
-            return n
-        except ParserInvalidOptionError:
-            pass
-        #NOTE - not optional production
-        self.__ExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_Var.__qualname__.split(".__")[-1]}')
-        raise ParserExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_Var.__qualname__.split(".__")[-1]}')
+        self.__T_Id()
+        self.__NT_Factor1_OR_Var1()
+        return n
 
     def __NT_SimpleExpression(self) -> sp.ParserTreeNode:
         n = sp.ParserTreeNode()
-        try:
-            self.__NT_AdditiveExpression()
-            self.__NT_SimpleExpression1()
-            return n
-        except ParserInvalidOptionError:
-            pass
-        #NOTE - not optional production
-        self.__ExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_SimpleExpression.__qualname__.split(".__")[-1]}')
-        raise ParserExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_SimpleExpression.__qualname__.split(".__")[-1]}')
+        self.__NT_AdditiveExpression()
+        self.__NT_SimpleExpression1()
+        return n
 
     def __NT_SimpleExpression1(self) -> sp.ParserTreeNode:
         #NOTE - optional production
@@ -544,8 +401,6 @@ class Parser():
             self.__NT_Relop()
             self.__NT_AdditiveExpression()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
         self.__SetCurrentToken(currentI)
@@ -557,63 +412,41 @@ class Parser():
         try:
             self.__T_LessEqual()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
         try:
             self.__SetCurrentToken(currentI)
             self.__T_Less()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
         try:
             self.__SetCurrentToken(currentI)
             self.__T_Greater()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
         try:
             self.__SetCurrentToken(currentI)
             self.__T_GreaterEqual()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
         try:
             self.__SetCurrentToken(currentI)
             self.__T_Equal()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
-        try:
-            self.__SetCurrentToken(currentI)
-            self.__T_Different()
-            return n
-        except ParserInvalidOptionError:
-            pass
-        #NOTE - not optional production
-        self.__ExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_Relop.__qualname__.split(".__")[-1]}')
-        raise ParserExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_Relop.__qualname__.split(".__")[-1]}')
+        self.__SetCurrentToken(currentI)
+        self.__T_Different()
+        return n
 
     def __NT_AdditiveExpression(self) -> sp.ParserTreeNode:
         n = sp.ParserTreeNode()
-        try:
-            self.__NT_Term()
-            self.__NT_AdditiveExpression1()
-            return n
-        except ParserInvalidOptionError:
-            pass
-        #NOTE - not optional production
-        self.__ExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_AdditiveExpression.__qualname__.split(".__")[-1]}')
-        raise ParserExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_AdditiveExpression.__qualname__.split(".__")[-1]}')
+        self.__NT_Term()
+        self.__NT_AdditiveExpression1()
+        return n
 
     def __NT_AdditiveExpression1(self) -> sp.ParserTreeNode:
         #NOTE - optional production
@@ -624,8 +457,6 @@ class Parser():
             self.__NT_Term()
             self.__NT_AdditiveExpression1()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
         self.__SetCurrentToken(currentI)
@@ -637,31 +468,17 @@ class Parser():
         try:
             self.__T_Plus()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
-        try:
-            self.__SetCurrentToken(currentI)
-            self.__T_Minus()
-            return n
-        except ParserInvalidOptionError:
-            pass
-        #NOTE - not optional production
-        self.__ExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_Addop.__qualname__.split(".__")[-1]}')
-        raise ParserExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_Addop.__qualname__.split(".__")[-1]}')
+        self.__SetCurrentToken(currentI)
+        self.__T_Minus()
+        return n
 
     def __NT_Term(self) -> sp.ParserTreeNode:
         n = sp.ParserTreeNode()
-        try:
-            self.__NT_Factor()
-            self.__NT_Term1()
-            return n
-        except ParserInvalidOptionError:
-            pass
-        #NOTE - not optional production
-        self.__ExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_Term.__qualname__.split(".__")[-1]}')
-        raise ParserExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_Term.__qualname__.split(".__")[-1]}')
+        self.__NT_Factor()
+        self.__NT_Term1()
+        return n
 
     def __NT_Term1(self) -> sp.ParserTreeNode:
         #NOTE - optional production
@@ -672,8 +489,6 @@ class Parser():
             self.__NT_Factor()
             self.__NT_Term1()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
         self.__SetCurrentToken(currentI)
@@ -685,19 +500,11 @@ class Parser():
         try:
             self.__T_Multiply()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
-        try:
-            self.__SetCurrentToken(currentI)
-            self.__T_Divide()
-            return n
-        except ParserInvalidOptionError:
-            pass
-        #NOTE - not optional production
-        self.__ExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_Mulop.__qualname__.split(".__")[-1]}')
-        raise ParserExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_Mulop.__qualname__.split(".__")[-1]}')
+        self.__SetCurrentToken(currentI)
+        self.__T_Divide()
+        return n
 
     def __NT_Factor(self) -> sp.ParserTreeNode:
         n = sp.ParserTreeNode()
@@ -707,8 +514,6 @@ class Parser():
             self.__NT_Expression()
             self.__T_ParenthesesClose()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
         try:
@@ -716,19 +521,11 @@ class Parser():
             self.__T_Id()
             self.__NT_Factor2()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
-        try:
-            self.__SetCurrentToken(currentI)
-            self.__T_Num()
-            return n
-        except ParserInvalidOptionError:
-            pass
-        #NOTE - not optional production
-        self.__ExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_Factor.__qualname__.split(".__")[-1]}')
-        raise ParserExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_Factor.__qualname__.split(".__")[-1]}')
+        self.__SetCurrentToken(currentI)
+        self.__T_Num()
+        return n
 
     def __NT_Factor1_OR_Var1(self):
         #NOTE - optional production
@@ -739,8 +536,6 @@ class Parser():
             self.__NT_Expression()
             self.__T_SquareBracketsClose()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
         self.__SetCurrentToken(currentI)
@@ -750,23 +545,15 @@ class Parser():
         n = sp.ParserTreeNode()
         currentI = self.__currentTokenI
         try:
-            self.__NT_Factor1_OR_Var1()
-            return n
-        except ParserExhaustedOptionsError:
-            pass
-        except ParserInvalidOptionError:
-            pass
-        try:
-            self.__SetCurrentToken(currentI)
             self.__T_ParenthesesOpen()
             self.__NT_Args()
             self.__T_ParenthesesClose()
             return n
         except ParserInvalidOptionError:
             pass
-        #NOTE - not optional production
-        self.__ExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_Factor2.__qualname__.split(".__")[-1]}')
-        raise ParserExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_Factor2.__qualname__.split(".__")[-1]}')
+        self.__SetCurrentToken(currentI)
+        self.__NT_Factor1_OR_Var1()
+        return n
 
     def __NT_Args(self) -> sp.ParserTreeNode:
         #NOTE - optional production
@@ -776,8 +563,6 @@ class Parser():
             self.__T_Id()
             self.__NT_ArgList1()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
         try:
@@ -789,8 +574,6 @@ class Parser():
             self.__NT_AdditiveExpression1()
             self.__NT_ArgList2()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
         try:
@@ -814,8 +597,6 @@ class Parser():
             self.__NT_Expression()
             self.__NT_ArgList()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
         self.__SetCurrentToken(currentI)
@@ -829,8 +610,6 @@ class Parser():
             self.__NT_Expression()
             self.__NT_ArgList()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
         try:
@@ -840,8 +619,6 @@ class Parser():
             self.__T_SquareBracketsClose()
             self.__NT_ArgList3()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
         try:
@@ -850,24 +627,16 @@ class Parser():
             self.__NT_AdditiveExpression1()
             self.__NT_ArgList2()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
-        try:
-            self.__SetCurrentToken(currentI)
-            self.__T_ParenthesesOpen()
-            self.__NT_Args()
-            self.__T_ParenthesesClose()
-            self.__NT_Term1()
-            self.__NT_AdditiveExpression1()
-            self.__NT_ArgList2()
-            return n
-        except ParserInvalidOptionError:
-            pass
-        #NOTE - not optional production
-        self.__ExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_ArgList1.__qualname__.split(".__")[-1]}')
-        raise ParserExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_ArgList1.__qualname__.split(".__")[-1]}')
+        self.__SetCurrentToken(currentI)
+        self.__T_ParenthesesOpen()
+        self.__NT_Args()
+        self.__T_ParenthesesClose()
+        self.__NT_Term1()
+        self.__NT_AdditiveExpression1()
+        self.__NT_ArgList2()
+        return n
 
     def __NT_ArgList2(self) -> sp.ParserTreeNode:
         n = sp.ParserTreeNode()
@@ -877,19 +646,11 @@ class Parser():
             self.__NT_AdditiveExpression()
             self.__NT_ArgList()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
-        try:
-            self.__SetCurrentToken(currentI)
-            self.__NT_ArgList()
-            return n
-        except ParserInvalidOptionError:
-            pass
-        #NOTE - not optional production
-        self.__ExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_ArgList2.__qualname__.split(".__")[-1]}')
-        raise ParserExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_ArgList2.__qualname__.split(".__")[-1]}')
+        self.__SetCurrentToken(currentI)
+        self.__NT_ArgList()
+        return n
 
     def __NT_ArgList3(self) -> sp.ParserTreeNode:
         n = sp.ParserTreeNode()
@@ -899,21 +660,13 @@ class Parser():
             self.__NT_Expression()
             self.__NT_ArgList()
             return n
-        except ParserExhaustedOptionsError:
-            pass
         except ParserInvalidOptionError:
             pass
-        try:
-            self.__SetCurrentToken(currentI)
-            self.__NT_Term1()
-            self.__NT_AdditiveExpression1()
-            self.__NT_ArgList2()
-            return n
-        except ParserInvalidOptionError:
-            pass
-        #NOTE - not optional production
-        self.__ExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_ArgList3.__qualname__.split(".__")[-1]}')
-        raise ParserExhaustedOptionsError(f'Couldn\'t parse the production rule for {self.__NT_ArgList3.__qualname__.split(".__")[-1]}')
+        self.__SetCurrentToken(currentI)
+        self.__NT_Term1()
+        self.__NT_AdditiveExpression1()
+        self.__NT_ArgList2()
+        return n
 
     # NOTE - TERMINALS
     def __T_Id(self):

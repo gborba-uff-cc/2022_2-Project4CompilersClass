@@ -120,7 +120,9 @@ def __ShouldOutputToken(token: st.Token) -> bool:
     Return True if the token will be printed to scanner output.
     """
     # NOTE - reject errors token that are blanks
-    return not (token.type is  st.TokenType.ERROR and token.value in fa_alc.blanks)
+    return not (
+        (token.type is  st.TokenType.ERROR and token.value in fa_alc.blanks) or
+        (token.type is st.TokenType.COMMENT))
 
 def RunParser(options: ModuleOptions):
     """

@@ -15,7 +15,7 @@ def SyntaxErrorText(
     if previousToken:
         previousTokenText = f', the last recognized token was \"{previousToken.value}\" @ {previousToken.lineNo}.{previousToken.columnNo}\n'
     hintText = f'Read the tokens as: (token) (@: at) (lineNo).(columnNo)'
-    return f'{msg}\nOn the file {filename if filename else ""}{currentTokenText}{previousTokenText}{hintText}'
+    return f'{msg}\nOn the file{f" {filename}" if filename else ""}, {currentTokenText}{previousTokenText}{hintText}'
 
 class ParserInvalidOptionError(SyntaxError):
     def __init__(self, *args: object) -> None:

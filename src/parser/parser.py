@@ -186,13 +186,13 @@ class Parser():
         n = sp.ParserTreeNode()
         currentI = self.__currentTokenI
         try:
-            self.__NT_Param()
-            self.__NT_ParamList()
+            self.__T_Void()
             return n
         except ParserInvalidOptionError:
             pass
         self.__SetCurrentToken(currentI)
-        self.__T_Void()
+        self.__NT_Param()
+        self.__NT_ParamList()
         return n
 
     def __NT_ParamList(self) -> sp.ParserTreeNode:
@@ -302,12 +302,6 @@ class Parser():
         n = sp.ParserTreeNode()
         currentI = self.__currentTokenI
         try:
-            self.__NT_Statement1()
-            return n
-        except ParserInvalidOptionError:
-            pass
-        try:
-            self.__SetCurrentToken(currentI)
             self.__T_CurlyBracketsOpen()
             self.__NT_LocalDeclarations()
             self.__NT_StatementList()
@@ -336,8 +330,14 @@ class Parser():
             return n
         except ParserInvalidOptionError:
             pass
+        try:
+            self.__SetCurrentToken(currentI)
+            self.__T_Return()
+            self.__NT_Statement1()
+            return n
+        except ParserInvalidOptionError:
+            pass
         self.__SetCurrentToken(currentI)
-        self.__T_Return()
         self.__NT_Statement1()
         return n
 
@@ -345,12 +345,12 @@ class Parser():
         n = sp.ParserTreeNode()
         currentI = self.__currentTokenI
         try:
-            self.__NT_Expression()
             self.__T_Semicolon()
             return n
         except ParserInvalidOptionError:
             pass
         self.__SetCurrentToken(currentI)
+        self.__NT_Expression()
         self.__T_Semicolon()
         return n
 
@@ -623,6 +623,9 @@ class Parser():
             pass
         try:
             self.__SetCurrentToken(currentI)
+            self.__T_ParenthesesOpen()
+            self.__NT_Args()
+            self.__T_ParenthesesClose()
             self.__NT_Term1()
             self.__NT_AdditiveExpression1()
             self.__NT_ArgList2()
@@ -630,9 +633,6 @@ class Parser():
         except ParserInvalidOptionError:
             pass
         self.__SetCurrentToken(currentI)
-        self.__T_ParenthesesOpen()
-        self.__NT_Args()
-        self.__T_ParenthesesClose()
         self.__NT_Term1()
         self.__NT_AdditiveExpression1()
         self.__NT_ArgList2()

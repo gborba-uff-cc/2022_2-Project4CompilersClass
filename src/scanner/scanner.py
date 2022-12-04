@@ -69,12 +69,14 @@ class Scanner(afd.DFA):
     def IdentifyTokenTypeByValue(self, value: str) -> st.TokenType:
         tokenType = st.TokenType.ERROR
         for dfaType, M in fa_alc.dictCMinusDfas.items():
-            if dfaType in {fa_alc.CMinusDFAs.Identifiers, fa_alc.CMinusDFAs.Numbers} and \
+            if dfaType in {fa_alc.CMinusDFAs.Identifiers, fa_alc.CMinusDFAs.Numbers, fa_alc.CMinusDFAs.Comments} and \
                 M.accepts_input(value):
                     if dfaType is fa_alc.CMinusDFAs.Identifiers:
                         return st.TokenType.ID
-                    else:
+                    elif dfaType is fa_alc.CMinusDFAs.Numbers:
                         return st.TokenType.NUM
+                    else:
+                        return st.TokenType.COMMENT
         for tt in st.TokenType:
             if value == tt.value:
                 return tt

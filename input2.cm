@@ -1,0 +1,41 @@
+/* NOTE - incorrect input 1 */
+
+int DoubleOf(int x) {
+    return 2*x;
+}
+
+/* FIXME - missing void parameter */
+void main() {
+    int counter;
+    int doubles;
+    int v[4];
+    int i;
+    int soma;
+
+    counter = 0;
+    doubles = 0;
+    i = 0;
+    soma = 0;
+
+    /*count 100 nums*/
+
+    while (counter < 100) {
+        counter = counter + 1;
+        doubles = DoubleOf(counter);
+    }
+
+    while (i < 4) {
+        v[i] = i;
+        soma = soma + i;
+        i = i+1;
+    }
+
+    if (i > 0) {
+        i = (0-1) * i;
+    }
+    else {
+        i = 0;
+    }
+
+    return;
+}

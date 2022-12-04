@@ -1,12 +1,15 @@
+/* NOTE - incorrect input 2 */
+
 int DoubleOf(int x) {
     return 2*x;
 }
 
-void main() {
+void main(void) {
     int counter;
     int doubles;
     int v[4];
     int i;
+    /* FIXME - missing a ; */
     int soma;
 
     counter = 0;
@@ -25,6 +28,13 @@ void main() {
         v[i] = i;
         soma = soma + i;
         i = i+1;
+    }
+
+    if (i > 0) {
+        i = (0-1) * i;
+    }
+    else {
+        i = 0;
     }
 
     return;

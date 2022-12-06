@@ -1,0 +1,338 @@
+FACTORING NONTERMINALS (applied on the result of 2.cminus_bnf_without_left_recursion.txt):
+
+program ::=
+		  declaration_list
+declaration_list ::=
+		  declaration declaration_list1
+declaration_list1 ::=
+		  declaration declaration_list1
+		| ε
+declaration ::=
+		  var_declaration
+		| fun_declaration
+var_declaration ::=
+		X   type_specifier ID ;
+		X | type_specifier ID [ NUM ] ;
+		----------------------------------------
+		  type_specifier ID var_declaration1
+var_declaration1 ::=
+		  ; 
+		| [ NUM ] ;
+type_specifier ::=
+		  int
+		| void
+fun_declaration ::=
+		int ID ( params ) compound_stmt
+		float ID ( params ) compound_stmt
+params ::=
+		  param_list
+		| void
+param_list ::=
+		  param param_list1
+param_list1 ::=
+		  , param param_list1
+		| ε
+param ::=
+		X   int ID
+		X | void ID
+		X | int ID [ ]
+		X | void ID [ ]
+		--------------------------------
+		  int ID param1
+		| void ID param1
+param1 ::=
+		  [ ]
+		| ε
+compound_stmt ::=
+		  { local_declarations statement_list }
+local_declarations ::=
+		X   ε local_declarations1
+		--------------------------------
+		  local_declarations1
+local_declarations1 ::=
+		X   int ID ; local_declarations1
+		X | void ID ; local_declarations1
+		X | int ID [ NUM ] ; local_declarations1
+		X | void ID [ NUM ] ; local_declarations1
+		X | ε
+		--------------------------------
+		  int ID local_declaration2
+		| void ID local_declaration2
+		| ε
+local_declaration2 ::=
+		  ; local_declarations1
+		| [ NUM ] ; local_declarations1
+statement_list ::=
+		X   ε statement_list1
+		--------------------------------
+		  statement_list1
+statement_list1 ::=
+		  statement statement_list1
+		| ε
+statement ::=
+		  expression_stmt
+		| { local_declarations statement_list }
+		| selection_stmt
+		| iteration_stmt
+		| return_stmt
+expression_stmt ::=
+		  expression ;
+		| ;
+selection_stmt ::=
+		X   if ( expression ) statement
+		X | if ( expression ) statement else statement
+		--------------------------------
+		  if ( expression ) statement selection_stmt1
+selection_stmt1 ::=
+		  else statement
+		| ε
+iteration_stmt ::=
+		  while ( expression ) statement
+return_stmt ::=
+		X   return ;
+		X | return expression ;
+		--------------------------------
+		  return return_stmt1
+return_stmt1 :: =
+		  ;
+		| expression ;
+expression ::=
+		  var = expression
+		| simple_expression
+var ::=
+		X   ID
+		X | ID [ expression ]
+		--------------------------------
+		  ID var1
+var1 ::=
+		  [ expression ]
+		| ε
+simple_expression ::=
+		X   additive_expression relop additive_expression
+		X | additive_expression
+		--------------------------------
+		  additive_expression simple_expression1
+simple_expression1 ::=
+		  relop additive_expression
+		| ε
+relop ::=
+		  <=
+		| <
+		| >
+		| >=
+		| ==
+		| !=
+additive_expression ::=
+		  term additive_expression1
+additive_expression1 ::=
+		  addop term additive_expression1
+		| ε
+addop ::=
+		  +
+		| -
+term ::=
+		factor term1
+term1 ::=
+		  mulop factor term1
+		| ε
+mulop ::=
+		  *
+		| /
+factor ::=
+		  ( expression )
+		X | ID
+		X | ID [ expression ]
+		| ID factor1
+		| call
+		| NUM
+factor1 ::=
+		  [ expression ]
+		| ε
+call ::=
+		  ID ( args )
+args ::=
+		  arg_list
+		| ε
+arg_list ::=
+		X | ID = expression arg_list1
+		X | ID [ expression ] = expression arg_list1
+		X | ( expression ) term1 additive_expression1 relop additive_expression arg_list1
+		X | ID term1 additive_expression1 relop additive_expression arg_list1
+		X | ID [ expression ] term1 additive_expression1 relop additive_expression arg_list1
+		X | NUM term1 additive_expression1 relop additive_expression arg_list1
+		X | ( expression ) term1 additive_expression1 arg_list1
+		X | ID term1 additive_expression1 arg_list1
+		X | ID [ expression ] term1 additive_expression1 arg_list1
+		X | NUM term1 additive_expression1 arg_list1
+		X | ID ( args ) term1 additive_expression1 relop additive_expression arg_list1
+		X | ID ( args ) term1 additive_expression1 arg_list1
+		| ID arg_list2
+		| ( expression ) term1 additive_expression1 arg_list3
+		| NUM term1 additive_expression1 arg_list3
+arg_list1 ::=
+		  , expression arg_list1
+		| ε
+arg_list2 ::=
+		  = expression arg_list1
+		X | [ expression ] = expression arg_list1
+		X | term1 additive_expression1 relop additive_expression arg_list1
+		X | [ expression ] term1 additive_expression1 relop additive_expression arg_list1
+		X | term1 additive_expression1 arg_list1
+		X | [ expression ] term1 additive_expression1 arg_list1
+		X | ( args ) term1 additive_expression1 relop additive_expression arg_list1
+		X | ( args ) term1 additive_expression1 arg_list1
+		| [ expression ] arg_list4
+		| term1 additive_expression1 arg_list3
+		| ( args ) term1 additive_expression1 arg_list3
+arg_list3 ::=
+		  relop additive_expression arg_list1
+		| arg_list1
+arg_list4 ::=
+		  = expression arg_list1
+		X | term1 additive_expression1 relop additive_expression arg_list1
+		X | term1 additive_expression1 arg_list1
+		| term1 additive_expression1 arg_list3
+
+
+================================================================================
+RESULT OF FACTORING NONTERMINALS:
+
+program ::=
+		  declaration_list
+declaration_list ::=
+		  declaration declaration_list1
+declaration_list1 ::=
+		  declaration declaration_list1
+		| ε
+declaration ::=
+		  var_declaration
+		| fun_declaration
+var_declaration ::=
+		  type_specifier ID var_declaration1
+var_declaration1 ::=
+		  ; 
+		| [ NUM ] ;
+type_specifier ::=
+		  int
+		| void
+fun_declaration ::=
+		int ID ( params ) compound_stmt
+		float ID ( params ) compound_stmt
+params ::=
+		  param_list
+		| void
+param_list ::=
+		  param param_list1
+param_list1 ::=
+		  , param param_list1
+		| ε
+param ::=
+		  int ID param1
+		| void ID param1
+param1 ::=
+		  [ ]
+		| ε
+compound_stmt ::=
+		  { local_declarations statement_list }
+local_declarations ::=
+		  local_declarations1
+local_declarations1 ::=
+		  int ID local_declaration2
+		| void ID local_declaration2
+		| ε
+local_declaration2 ::=
+		  ; local_declarations1
+		| [ NUM ] ; local_declarations1
+statement_list ::=
+		  statement_list1
+statement_list1 ::=
+		  statement statement_list1
+		| ε
+statement ::=
+		  expression_stmt
+		| { local_declarations statement_list }
+		| selection_stmt
+		| iteration_stmt
+		| return_stmt
+expression_stmt ::=
+		  expression ;
+		| ;
+selection_stmt ::=
+		  if ( expression ) statement selection_stmt1
+selection_stmt1 ::=
+		  else statement
+		| ε
+iteration_stmt ::=
+		  while ( expression ) statement
+return_stmt ::=
+		  return return_stmt1
+return_stmt1 :: =
+		  ;
+		| expression ;
+expression ::=
+		  var = expression
+		| simple_expression
+var ::=
+		  ID var1
+var1 ::=
+		  [ expression ]
+		| ε
+simple_expression ::=
+		  additive_expression simple_expression1
+simple_expression1 ::=
+		  relop additive_expression
+		| ε
+relop ::=
+		  <=
+		| <
+		| >
+		| >=
+		| ==
+		| !=
+additive_expression ::=
+		  term additive_expression1
+additive_expression1 ::=
+		  addop term additive_expression1
+		| ε
+addop ::=
+		  +
+		| -
+term ::=
+		factor term1
+term1 ::=
+		  mulop factor term1
+		| ε
+mulop ::=
+		  *
+		| /
+factor ::=
+		  ( expression )
+		| ID factor1
+		| call
+		| NUM
+factor1 ::=
+		  [ expression ]
+		| ε
+call ::=
+		  ID ( args )
+args ::=
+		  arg_list
+		| ε
+arg_list ::=
+		| ID arg_list2
+		| ( expression ) term1 additive_expression1 arg_list3
+		| NUM term1 additive_expression1 arg_list3
+arg_list1 ::=
+		  , expression arg_list1
+		| ε
+arg_list2 ::=
+		  = expression arg_list1
+		| [ expression ] arg_list4
+		| term1 additive_expression1 arg_list3
+		| ( args ) term1 additive_expression1 arg_list3
+arg_list3 ::=
+		  relop additive_expression arg_list1
+		| arg_list1
+arg_list4 ::=
+		  = expression arg_list1
+		| term1 additive_expression1 arg_list3

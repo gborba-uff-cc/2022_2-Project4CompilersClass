@@ -1,0 +1,299 @@
+SEQUENCE SET (applied on the result of 4.cminus_bnf_removing_duplicates.txt):
+
+program ::=
+		  declaration declaration_list
+		----------
+		1.	{$}
+		2.	{$}
+declaration_list ::=
+		  declaration declaration_list
+		| ε
+		----------
+		1.	{}
+		2.	{$}
+declaration ::=
+		  int ID declaration1
+		| void ID declaration1
+		----------
+		1.	{}
+		2.	{ε, int, void}
+declaration1 ::=
+		  ;
+		| [ NUM ] ;
+		| ( params ) compound_stmt
+		----------
+		1.	{}
+		2.	{ε, int, void}
+params ::=
+		  param param_list
+		| void
+		----------
+		1.	{}
+		2.	{)}
+param_list ::=
+		  , param param_list
+		| ε
+		----------
+		1.	{}
+		2.	{)}
+param ::=
+		  int ID param1
+		| void ID param1
+		----------
+		1.	{}
+		2.	{',', ε}
+param1 ::=
+		  [ ]
+		| ε
+		----------
+		1.	{}
+		2.	{',', ε}
+compound_stmt ::=
+		  { local_declarations statement_list }
+		----------
+		1.	{}
+		2.	{ε, int, void}
+local_declarations ::=
+		  int ID local_declaration1
+		| void ID local_declaration1
+		| ε
+		----------
+		1.	{}
+		2.	{ε, '{', if, while, return, ;, ID, (, NUM}
+local_declaration1 ::=
+		  ; local_declarations
+		| [ NUM ] ; local_declarations
+		----------
+		1.	{}
+		2.	{ε, '{', if, while, return, ;, ID, (, NUM}
+statement_list ::=
+		  statement statement_list
+		| ε
+		----------
+		1.	{}
+		2.	{'}'}
+statement ::=
+		  statement1
+		| { local_declarations statement_list }
+		| if ( expression ) statement statement2
+		| while ( expression ) statement
+		| return statement1
+		----------
+		1.	{}
+		2.	{ε, '{', if, while, return, ;, ID, (, NUM}
+		3.	{ε, '{', if, while, return, ;, ID, (, NUM, else}
+statement1 ::=
+		  expression ;
+		| ;
+		----------
+		1.	{}
+		2.	{ε, '{', if, while, return, ;, ID, (, NUM}
+		3.	{ε, '{', if, while, return, ;, ID, (, NUM, else}
+statement2 ::=
+		  else statement
+		| ε
+		----------
+		1.	{}
+		2.	{ε, '{', if, while, return, ;, ID, (, NUM, else}
+expression ::=
+		  var = expression
+		| simple_expression
+		----------
+		1.	{}
+		2.	{)}
+		3.	{), ;}
+		4.	{), ;, ]}
+		5.	{), ;, ], ',', ε}
+var ::=
+		  ID factor1_OR_var1
+		----------
+		1.	{}
+		2.	{=}
+simple_expression ::=
+		  additive_expression simple_expression1
+		----------
+		1.	{}
+		2.	{), ;}
+		3.	{), ;, ], ',', ε}
+simple_expression1 ::=
+		  relop additive_expression
+		| ε
+		----------
+		1.	{}
+		2.	{), ;}
+		3.	{), ;, ], ',', ε}
+relop ::=
+		  <=
+		| <
+		| >
+		| >=
+		| ==
+		| !=
+		----------
+		1.	{}
+		2.	{(, ID, NUM}
+additive_expression ::=
+		  term additive_expression1
+		----------
+		1.	{}
+		2.	{ε, <=, <, >, >=, ==, !=}
+		3.	{ε, <=, <, >, >=, ==, !=, ), ;}
+		4.	{ε, <=, <, >, >=, ==, !=, ), ;, ','}
+		5.	{ε, <=, <, >, >=, ==, !=, ), ;, ',', ]}
+additive_expression1 ::=
+		  addop term additive_expression1
+		| ε
+		----------
+		1.	{}
+		2.	{ε, <=, <, >, >=, ==, !=, ), ;}
+		3.	{ε, <=, <, >, >=, ==, !=, ), ;, ','}
+addop ::=
+		  +
+		| -
+		----------
+		1.	{}
+		2.	{(, ID, NUM}
+term ::=
+		factor term1
+		----------
+		1.	{}
+		2.	{ε, +, -}
+term1 ::=
+		  mulop factor term1
+		| ε
+		----------
+		1.	{}
+		2.	{ε, +, -}
+mulop ::=
+		  *
+		| /
+		----------
+		1.	{}
+		2.	{(, ID, NUM}
+factor ::=
+		  ( expression )
+		| ID factor2
+		| NUM
+		----------
+		1.	{}
+		2.	{ε, *, /}
+factor1_OR_var1 ::=
+		  [ expression ]
+		| ε
+		----------
+		1.	{}
+		2.	{=}
+		3.	{=, ε, *, /}
+factor2 ::=
+		  factor1_OR_var1
+		| ( args )
+		----------
+		1.	{}
+		2.	{ε, *, /}
+args ::=
+		  ID arg_list1
+		| ( expression ) term1 additive_expression1 arg_list2
+		| NUM term1 additive_expression1 arg_list2
+		| ε
+		----------
+		1.	{}
+		2.	{)}
+arg_list ::=
+		  , expression arg_list
+		| ε
+		----------
+		1.	{}
+		2.	{)}
+arg_list1 ::=
+		  = expression arg_list
+		| [ expression ] arg_list3
+		| term1 additive_expression1 arg_list2
+		| ( args ) term1 additive_expression1 arg_list2
+		----------
+		1.	{}
+		2.	{)}
+arg_list2 ::=
+		  relop additive_expression arg_list
+		| arg_list
+		----------
+		1.	{}
+		2.	{)}
+arg_list3 ::=
+		  = expression arg_list
+		| term1 additive_expression1 arg_list2
+		----------
+		1.	{}
+		2.	{)}
+
+
+================================================================================
+RESULT OF SEQUENCE SET
+
+program ::=
+		{$}
+declaration_list ::=
+		{$}
+declaration ::=
+		{ε, int, void}
+declaration1 ::=
+		{ε, int, void}
+params ::=
+		{)}
+param_list ::=
+		{)}
+param ::=
+		{',', ε}
+param1 ::=
+		{',', ε}
+compound_stmt ::=
+		{ε, int, void}
+local_declarations ::=
+		{ε, '{', if, while, return, ;, ID, (, NUM}
+local_declaration1 ::=
+		{ε, '{', if, while, return, ;, ID, (, NUM}
+statement_list ::=
+		{'}'}
+statement ::=
+		{ε, '{', if, while, return, ;, ID, (, NUM, else}
+statement1 ::=
+		{ε, '{', if, while, return, ;, ID, (, NUM, else}
+statement2 ::=
+		{ε, '{', if, while, return, ;, ID, (, NUM, else}
+expression ::=
+		{), ;, ], ',', ε}
+var ::=
+		{=}
+simple_expression ::=
+		{), ;, ], ',', ε}
+simple_expression1 ::=
+		{), ;, ], ',', ε}
+relop ::=
+		{(, ID, NUM}
+additive_expression ::=
+		{ε, <=, <, >, >=, ==, !=, ), ;, ',', ]}
+additive_expression1 ::=
+		{ε, <=, <, >, >=, ==, !=, ), ;, ','}
+addop ::=
+		{(, ID, NUM}
+term ::=
+		{ε, +, -}
+term1 ::=
+		{ε, +, -}
+mulop ::=
+		{(, ID, NUM}
+factor ::=
+		{ε, *, /}
+factor1_OR_var1 ::=
+		{=, ε, *, /}
+factor2 ::=
+		{ε, *, /}
+args ::=
+		{)}
+arg_list ::=
+		{)}
+arg_list1 ::=
+		{)}
+arg_list2 ::=
+		{)}
+arg_list3 ::=
+		{)}

@@ -1,0 +1,311 @@
+REMOVING DIRECT AND INDIRECT LEFT RECURSION (applied on the result of 1.cmcinus_initial_bnf):
+
+program ::=
+		  declaration-list
+declaration-list ::=
+		X   declaration-list declaration
+		X | declaration
+		----------------------------------------
+		  declaration declaration-list1
+declaration-list1 ::=
+		  declaration declaration-list1
+		| ε
+declaration ::=
+		  var-declaration
+		| fun-declaration
+var-declaration ::=
+		  type-specifier ID ;
+		| type-specifier ID [ NUM ] ;
+type-specifier ::=
+		  int
+		| void
+fun-declaration ::=
+		X   type-specifier ID ( params ) compound-stmt
+		----------------------------------------
+		int ID ( params ) compound-stmt
+		void ID ( params ) compound-stmt
+params ::=
+		  param-list
+		| void
+param-list ::=
+		X   param-list , param
+		X | param
+		----------------------------------------
+		  param param-list1
+param-list1 ::=
+		  , param param-list1
+		| ε
+param ::=
+		X   type-specifier ID
+		X | type-specifier ID [ ]
+		----------------------------------------
+		  int ID
+		| void ID
+		| int ID [ ]
+		| void ID [ ]
+compound-stmt ::=
+		  { local-declarations statement-list }
+local-declarations ::=
+		X   local-declarations var-declaration
+		X | ε
+		X   ε local-declarations1
+		----------------------------------------
+		  local-declarations1
+local-declarations1 ::=
+		X   var-declaration local-declarations1
+		----------------------------------------
+		X   type-specifier ID ; local-declarations1
+		X | type-specifier ID [ NUM ] ; local-declarations1
+		----------------------------------------
+		  int ID ; local-declarations1
+		| void ID ; local-declarations1
+		| int ID [ NUM ] ; local-declarations1
+		| void ID [ NUM ] ; local-declarations1
+		| ε
+statement-list ::=
+		X   statement-list statement
+		X | ε
+		X   ε statement-list1
+		----------------------------------------
+		  statement-list1
+statement-list1 ::=
+		  statement statement-list1
+		| ε
+statement ::=
+		  expression-stmt
+		X | compound-stmt
+		| { local-declarations statement-list }
+		| selection-stmt
+		| iteration-stmt
+		| return-stmt
+expression-stmt ::=
+		  expression ;
+		| ;
+selection-stmt ::=
+		  if ( expression ) statement
+		| if ( expression ) statement else statement
+iteration-stmt ::=
+		  while ( expression ) statement
+return-stmt ::=
+		  return ;
+		| return expression ;
+expression ::=
+		  var = expression
+		| simple-expression
+var ::=
+		  ID
+		| ID [ expression ]
+simple-expression ::=
+		  additive-expression relop additive-expression
+		| additive-expression
+relop ::=
+		  <=
+		| <
+		| >
+		| >=
+		| ==
+		| !=
+additive-expression ::=
+		X   additive-expression addop term
+		X | term
+		----------------------------------------
+		  term additive-expression1
+additive-expression1 ::=
+		  addop term additive-expression1
+		| ε
+addop ::=
+		  +
+		| -
+term ::=
+		X   term mulop factor
+		X | factor
+		----------------------------------------
+		factor term1
+term1 ::=
+		  mulop factor term1
+		| ε
+mulop ::=
+		  *
+		| /
+factor ::=
+		  ( expression )
+		X | var
+		| ID
+		| ID [ expression ]
+		| call
+		| NUM
+call ::=
+		  ID ( args )
+args ::=
+		  arg-list
+		| ε
+arg-list ::=
+		X   arg-list , expression
+		X | expression
+		X | var = expression
+		X | simple-expression
+		| ID = expression
+		| ID [ expression ] = expression
+		X | additive-expression relop additive-expression
+		X | additive-expression
+		X | term additive-expression1 relop additive-expression
+		X | term additive-expression1
+		X | factor term1 additive-expression1 relop additive-expression
+		X | factor term1 additive-expression1
+		| ( expression ) term1 additive-expression1 relop additive-expression
+		| ID term1 additive-expression1 relop additive-expression
+		| ID [ expression ] term1 additive-expression1 relop additive-expression
+		X | call term1 additive-expression1 relop additive-expression
+		| NUM term1 additive-expression1 relop additive-expression
+		| ( expression ) term1 additive-expression1
+		| ID term1 additive-expression1
+		| ID [ expression ] term1 additive-expression1
+		X | call term1 additive-expression1
+		| NUM term1 additive-expression1
+		| ID ( args ) term1 additive-expression1 relop additive-expression
+		| ID ( args ) term1 additive-expression1
+		========================================
+		========================================
+		| ID = expression arg-list1
+		| ID [ expression ] = expression arg-list1
+		| ( expression ) term1 additive-expression1 relop additive-expression arg-list1
+		| ID term1 additive-expression1 relop additive-expression arg-list1
+		| ID [ expression ] term1 additive-expression1 relop additive-expression arg-list1
+		| NUM term1 additive-expression1 relop additive-expression arg-list1
+		| ( expression ) term1 additive-expression1 arg-list1
+		| ID term1 additive-expression1 arg-list1
+		| ID [ expression ] term1 additive-expression1 arg-list1
+		| NUM term1 additive-expression1 arg-list1
+		| ID ( args ) term1 additive-expression1 relop additive-expression arg-list1
+		| ID ( args ) term1 additive-expression1 arg-list1
+arg-list1 ::=
+		  , expression arg-list1
+		| ε
+
+
+================================================================================
+RESULT OF REMOVING DIRECT AND INDIRECT LEFT RECURSION:
+
+program ::=
+		  declaration_list
+declaration_list ::=
+		  declaration declaration_list1
+declaration_list1 ::=
+		  declaration declaration_list1
+		| ε
+declaration ::=
+		  var_declaration
+		| fun_declaration
+var_declaration ::=
+		  type_specifier ID ;
+		| type_specifier ID [ NUM ] ;
+type_specifier ::=
+		  int
+		| void
+fun_declaration ::=
+		int ID ( params ) compound_stmt
+		float ID ( params ) compound_stmt
+params ::=
+		  param_list
+		| void
+param_list ::=
+		  param param_list1
+param_list1 ::=
+		  , param param_list1
+		| ε
+param ::=
+		  int ID
+		| void ID
+		| int ID [ ]
+		| void ID [ ]
+compound_stmt ::=
+		  { local_declarations statement_list }
+local_declarations ::=
+		  local_declarations1
+local_declarations1 ::=
+		  int ID ; local_declarations1
+		| void ID ; local_declarations1
+		| int ID [ NUM ] ; local_declarations1
+		| void ID [ NUM ] ; local_declarations1
+		| ε
+statement_list ::=
+		  statement_list1
+statement_list1 ::=
+		  statement statement_list1
+		| ε
+statement ::=
+		  expression_stmt
+		| { local_declarations statement_list }
+		| selection_stmt
+		| iteration_stmt
+		| return_stmt
+expression_stmt ::=
+		  expression ;
+		| ;
+selection_stmt ::=
+		  if ( expression ) statement
+		| if ( expression ) statement else statement
+iteration_stmt ::=
+		  while ( expression ) statement
+return_stmt ::=
+		  return ;
+		| return expression ;
+expression ::=
+		  var = expression
+		| simple_expression
+var ::=
+		  ID
+		| ID [ expression ]
+simple_expression ::=
+		  additive_expression relop additive_expression
+		| additive_expression
+relop ::=
+		  <=
+		| <
+		| >
+		| >=
+		| ==
+		| !=
+additive_expression ::=
+		  term additive_expression1
+additive_expression1 ::=
+		  addop term additive_expression1
+		| ε
+addop ::=
+		  +
+		| -
+term ::=
+		factor term1
+term1 ::=
+		  mulop factor term1
+		| ε
+mulop ::=
+		  *
+		| /
+factor ::=
+		  ( expression )
+		| ID
+		| ID [ expression ]
+		| call
+		| NUM
+call ::=
+		  ID ( args )
+args ::=
+		  arg_list
+		| ε
+arg_list ::=
+		| ID = expression arg_list1
+		| ID [ expression ] = expression arg_list1
+		| ( expression ) term1 additive_expression1 relop additive_expression arg_list1
+		| ID term1 additive_expression1 relop additive_expression arg_list1
+		| ID [ expression ] term1 additive_expression1 relop additive_expression arg_list1
+		| NUM term1 additive_expression1 relop additive_expression arg_list1
+		| ( expression ) term1 additive_expression1 arg_list1
+		| ID term1 additive_expression1 arg_list1
+		| ID [ expression ] term1 additive_expression1 arg_list1
+		| NUM term1 additive_expression1 arg_list1
+		| ID ( args ) term1 additive_expression1 relop additive_expression arg_list1
+		| ID ( args ) term1 additive_expression1 arg_list1
+arg_list1 ::=
+		  , expression arg_list1
+		| ε

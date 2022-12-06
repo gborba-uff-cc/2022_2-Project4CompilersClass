@@ -1,0 +1,133 @@
+LL(1) compliant verification
+
+1. for each production A -> α1 | α2 | … |αn,
+	First(αi) ∩ First(αj) = ∅ for i >= 1, j <= n, i != j. (that is different prefixes)
+2. for each nonterminal A such that Ɛ ∈ First(A),
+	First(A) ∩ Sequnce(A) = ∅
+
+
+-------------------------------------------------------------------------------
+program ::=
+		  declaration declaration_list
+		----------
+		1. ∅
+		2. ∅
+declaration_list ::=
+		  declaration declaration_list
+		| ε
+		----------
+		1. ∅
+		2. ∅
+declaration ::=
+		  int ID declaration1
+		| void ID declaration1
+		----------
+		1. ∅
+		2. ∅
+declaration1 ::=
+		  ;
+		| [ NUM ] ;
+		| ( params ) compound_stmt
+		----------
+		1. ∅
+		2. ∅
+params ::=
+		  param param_list
+		| void
+		----------
+		1. {void}  NOT LL(1) COMPLIANT
+param_list ::=
+		  , param param_list
+		| ε
+param ::=
+		  int ID param1
+		| void ID param1
+param1 ::=
+		  [ ]
+		| ε
+compound_stmt ::=
+		  { local_declarations statement_list }
+local_declarations ::=
+		  int ID local_declaration1
+		| void ID local_declaration1
+		| ε
+local_declaration1 ::=
+		  ; local_declarations
+		| [ NUM ] ; local_declarations
+statement_list ::=
+		  statement statement_list
+		| ε
+statement ::=
+		  statement1
+		| { local_declarations statement_list }
+		| if ( expression ) statement statement2
+		| while ( expression ) statement
+		| return statement1
+statement1 ::=
+		  expression ;
+		| ;
+statement2 ::=
+		  else statement
+		| ε
+expression ::=
+		  var = expression
+		| simple_expression
+var ::=
+		  ID factor1_OR_var1
+simple_expression ::=
+		  additive_expression simple_expression1
+simple_expression1 ::=
+		  relop additive_expression
+		| ε
+relop ::=
+		  <=
+		| <
+		| >
+		| >=
+		| ==
+		| !=
+additive_expression ::=
+		  term additive_expression1
+additive_expression1 ::=
+		  addop term additive_expression1
+		| ε
+addop ::=
+		  +
+		| -
+term ::=
+		factor term1
+term1 ::=
+		  mulop factor term1
+		| ε
+mulop ::=
+		  *
+		| /
+factor ::=
+		  ( expression )
+		| ID factor2
+		| NUM
+factor1_OR_var1 ::=
+		  [ expression ]
+		| ε
+factor2 ::=
+		  factor1_OR_var1
+		| ( args )
+args ::=
+		  ID arg_list1
+		| ( expression ) term1 additive_expression1 arg_list2
+		| NUM term1 additive_expression1 arg_list2
+		| ε
+arg_list ::=
+		  , expression arg_list
+		| ε
+arg_list1 ::=
+		  = expression arg_list
+		| [ expression ] arg_list3
+		| term1 additive_expression1 arg_list2
+		| ( args ) term1 additive_expression1 arg_list2
+arg_list2 ::=
+		  relop additive_expression arg_list
+		| arg_list
+arg_list3 ::=
+		  = expression arg_list
+		| term1 additive_expression1 arg_list2

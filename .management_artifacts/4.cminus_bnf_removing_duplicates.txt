@@ -1,0 +1,317 @@
+REMOVING DUPLICATED NONTERMINALS (applied on the result of 3.cminus_bnf_factorated.txt):
+
+X program ::=
+		X   declaration_list
+X declaration_list ::=
+		X   declaration declaration_list1
+X declaration_list1 ::=
+		X   declaration declaration_list1
+		X | ε
+program ::=
+		  declaration declaration_list
+declaration_list ::=
+		  declaration declaration_list
+		| ε
+X declaration ::=
+		X   var_declaration
+		X | fun_declaration
+X var_declaration ::=
+		X   type_specifier ID var_declaration1
+X var_declaration1 ::=
+		X   ;
+		X | [ NUM ] ;
+X declaration ::=
+		X   type_specifier ID declaration1
+		X | int ID ( params ) compound_stmt
+		X | void ID ( params ) compound_stmt
+declaration ::=
+		  int ID declaration1
+		| void ID declaration1
+declaration1 ::=
+		  ;
+		| [ NUM ] ;
+		| ( params ) compound_stmt
+type_specifier ::=
+		  int
+		| void
+X fun_declaration ::=
+		X   int ID ( params ) compound_stmt
+		X | void ID ( params ) compound_stmt
+X params ::=
+		X   param_list
+		X | void
+X param_list ::=
+		X   param param_list1
+X param_list1 ::=
+		X   , param param_list1
+		X | ε
+params ::=
+		  param param_list
+		| void
+param_list ::=
+		  , param param_list
+		| ε
+param ::=
+		  int ID param1
+		| void ID param1
+param1 ::=
+		  [ ]
+		| ε
+compound_stmt ::=
+		  { local_declarations statement_list }
+X local_declarations ::=
+		X   local_declarations1
+X local_declarations1 ::=
+		X   int ID local_declaration2
+		X | void ID local_declaration2
+		X | ε
+X local_declaration2 ::=
+		X   ; local_declarations1
+		X | [ NUM ] ; local_declarations1
+local_declarations ::=
+		  int ID local_declaration1
+		| void ID local_declarations1
+		| ε
+local_declaration1 ::=
+		  ; local_declarations
+		| [ NUM ] ; local_declarations
+X statement_list ::=
+		X   statement_list1
+X statement_list1 ::=
+		X   statement statement_list1
+		X | ε
+statement_list ::=
+		  statement statement_list
+		| ε
+X statement ::=
+		X   expression_stmt_OR_return1
+		X | { local_declarations statement_list }
+		X | selection_stmt
+		X | iteration_stmt
+		X | return_stmt
+X expression_stmt_OR_return1 ::=
+		X   expression ;
+		X | ;
+X selection_stmt ::=
+		X   if ( expression ) statement selection_stmt1
+X selection_stmt1 ::=
+		X   else statement
+		X | ε
+statement ::=
+		  statement1
+		| { local_declarations statement_list }
+		| if ( expression ) statement statement2
+		| while ( expression ) statement
+		| return statement1
+statement1 ::=
+		  expression ;
+		| ;
+statement2 ::=
+		  else statement
+		| ε
+X iteration_stmt ::=
+		X   while ( expression ) statement
+X return_stmt ::=
+		X   return expression_stmt_OR_return1
+expression ::=
+		  var = expression
+		| simple_expression
+var ::=
+		  ID factor1_OR_var1
+simple_expression ::=
+		  additive_expression simple_expression1
+simple_expression1 ::=
+		  relop additive_expression
+		| ε
+relop ::=
+		  <=
+		| <
+		| >
+		| >=
+		| ==
+		| !=
+additive_expression ::=
+		  term additive_expression1
+additive_expression1 ::=
+		  addop term additive_expression1
+		| ε
+addop ::=
+		  +
+		| -
+term ::=
+		factor term1
+term1 ::=
+		  mulop factor term1
+		| ε
+mulop ::=
+		  *
+		| /
+factor ::=
+		  ( expression )
+		X | ID factor1_OR_var1
+		X | call
+		| ID factor2
+		| NUM
+factor1_OR_var1 ::=
+		  [ expression ]
+		| ε
+factor2 ::=
+		  factor1_OR_var1
+		| ( args )
+X call ::=
+		X   ID ( args )
+X args ::=
+		X   arg_list
+		X | ε
+X arg_list ::=
+		X   ID arg_list2
+		X | ( expression ) term1 additive_expression1 arg_list3
+		X | NUM term1 additive_expression1 arg_list3
+X arg_list1 ::=
+		X   , expression arg_list1
+		X | ε
+X arg_list2 ::=
+		X   = expression arg_list1
+		X | [ expression ] arg_list4
+		X | term1 additive_expression1 arg_list3
+		X | ( args ) term1 additive_expression1 arg_list3
+X arg_list3 ::=
+		X   relop additive_expression arg_list1
+		X | arg_list1
+X arg_list4 ::=
+		X   = expression arg_list1
+		X | term1 additive_expression1 arg_list3
+args ::=
+		  ID arg_list1
+		| ( expression ) term1 additive_expression1 arg_list2
+		| NUM term1 additive_expression1 arg_list2
+		| ε
+arg_list ::=
+		  , expression arg_list
+		| ε
+arg_list1 ::=
+		  = expression arg_list
+		| [ expression ] arg_list3
+		| term1 additive_expression1 arg_list2
+		| ( args ) term1 additive_expression1 arg_list2
+arg_list2 ::=
+		  relop additive_expression arg_list
+		| arg_list
+arg_list3 ::=
+		  = expression arg_list
+		| term1 additive_expression1 arg_list2
+
+
+================================================================================
+RESULT OF REMOVING DUPLICATED NONTERMINALS:
+
+program ::=
+		  declaration declaration_list
+declaration_list ::=
+		  declaration declaration_list
+		| ε
+declaration ::=
+		  int ID declaration1
+		| void ID declaration1
+declaration1 ::=
+		  ;
+		| [ NUM ] ;
+		| ( params ) compound_stmt
+params ::=
+		  param param_list
+		| void
+param_list ::=
+		  , param param_list
+		| ε
+param ::=
+		  int ID param1
+		| void ID param1
+param1 ::=
+		  [ ]
+		| ε
+compound_stmt ::=
+		  { local_declarations statement_list }
+local_declarations ::=
+		  int ID local_declaration1
+		| void ID local_declaration1
+		| ε
+local_declaration1 ::=
+		  ; local_declarations
+		| [ NUM ] ; local_declarations
+statement_list ::=
+		  statement statement_list
+		| ε
+statement ::=
+		  statement1
+		| { local_declarations statement_list }
+		| if ( expression ) statement statement2
+		| while ( expression ) statement
+		| return statement1
+statement1 ::=
+		  expression ;
+		| ;
+statement2 ::=
+		  else statement
+		| ε
+expression ::=
+		  var = expression
+		| simple_expression
+var ::=
+		  ID factor1_OR_var1
+simple_expression ::=
+		  additive_expression simple_expression1
+simple_expression1 ::=
+		  relop additive_expression
+		| ε
+relop ::=
+		  <=
+		| <
+		| >
+		| >=
+		| ==
+		| !=
+additive_expression ::=
+		  term additive_expression1
+additive_expression1 ::=
+		  addop term additive_expression1
+		| ε
+addop ::=
+		  +
+		| -
+term ::=
+		factor term1
+term1 ::=
+		  mulop factor term1
+		| ε
+mulop ::=
+		  *
+		| /
+factor ::=
+		  ( expression )
+		| ID factor2
+		| NUM
+factor1_OR_var1 ::=
+		  [ expression ]
+		| ε
+factor2 ::=
+		  factor1_OR_var1
+		| ( args )
+args ::=
+		  ID arg_list1
+		| ( expression ) term1 additive_expression1 arg_list2
+		| NUM term1 additive_expression1 arg_list2
+		| ε
+arg_list ::=
+		  , expression arg_list
+		| ε
+arg_list1 ::=
+		  = expression arg_list
+		| [ expression ] arg_list3
+		| term1 additive_expression1 arg_list2
+		| ( args ) term1 additive_expression1 arg_list2
+arg_list2 ::=
+		  relop additive_expression arg_list
+		| arg_list
+arg_list3 ::=
+		  = expression arg_list
+		| term1 additive_expression1 arg_list2

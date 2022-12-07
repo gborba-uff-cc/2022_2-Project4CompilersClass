@@ -136,7 +136,7 @@ def RunParser(options: ModuleOptions):
          open(options.parserOutputFile, mode='w', encoding=options.filesEncoding) as outputFile:
         sourceParser = pp.Parser(inputFile, textEchoBuffer, options.echoTraceParser)
         tree: sp.ParserTreeNode = sourceParser.Parse()
-        treeText: str = tree.NodeStr()
+        treeText: str = tree.NodeText()
         outputFile.write(f'{treeText}')
         pass
     return

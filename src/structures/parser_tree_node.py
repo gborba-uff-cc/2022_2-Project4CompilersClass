@@ -16,11 +16,11 @@ class ParserTreeNode():
         self.nodes.append(aNode)
         return None
 
-    def NodeStr(self) -> str:
-        content = self.__NodeStr(0)
+    def NodeText(self) -> str:
+        content = self.__NodeText(0)
         return content
 
-    def __NodeStr(self, indentLevel: int):
+    def __NodeText(self, indentLevel: int):
         buffer: io.StringIO = io.StringIO()
         text: str = ''
 
@@ -31,7 +31,7 @@ class ParserTreeNode():
         buffer.write(f'{"":<{indentLevel}}{text}\n')
 
         for childs in self.nodes:
-            childNode = childs.__NodeStr(indentLevel+1)
+            childNode = childs.__NodeText(indentLevel+1)
             buffer.write(childNode)
         content = buffer.getvalue()
 

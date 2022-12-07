@@ -39,6 +39,7 @@ class Parser():
         self.__sourceFile = sourceFile
         self.__ouTextFile = outTextFile
         self.__echoTrace = echoTrace
+        self.__traceStack: list[str] = []
 
         self.__tokens: typing.Sequence[st.Token] = []
         self.__currentTokenI: int = -1
@@ -64,7 +65,10 @@ class Parser():
     def Parse(self) -> sp.ParserTreeNode:
         """
         """
-        n = sp.ParserTreeNode()
+        if self.__echoTrace:
+            print("\n\nParsing the souce file", file=self.__ouTextFile)
+
+        n = sp.ParserTreeNode('')
         try:
             n = self.__NT_Program()
         except EOFError:  # NOTE - reached the end of file
@@ -78,9 +82,16 @@ class Parser():
                 print(SyntaxErrorText('Couldn\'t completely parse the source file.', '', self.__tokens[self.__furthestTokenReadI],  self.__tokens[self.__furthestTokenReadI-1]))
         return n
 
-    def __Match(self, expected: st.TokenType):
+    def __Match(self, expected: st.TokenType) -> sp.ParserTreeNode:
         """
         """
+        ruleName = f'T_{expected.name.capitalize()}'
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+        self.__traceStack.pop()
+
+        n = sp.ParserTreeNode(self.__currentToken)
+
         if (self.__currentToken.type is expected):
             self.__currentToken = self.__GetNextToken()
         else:
@@ -89,7 +100,7 @@ class Parser():
             if self.__furthestTokenReadI>0:
                 previousToken = self.__tokens[self.__furthestTokenReadI-1]
             self.__UnexpectedTokenError('Couldn\'t match a token', furthestToken, previousToken)
-        return None
+        return n
 
     @staticmethod
     def __UnexpectedTokenError(
@@ -113,7 +124,7 @@ class Parser():
         token = self.__currentToken = self.__tokens[self.__currentTokenI]
         if self.__furthestTokenReadI < self.__currentTokenI:
             self.__furthestTokenReadI = self.__currentTokenI
-        if self.__currentToken.type is st.TokenType.EOF:
+        if self.__currentToken.type is st.TokenType.EOF and self.__furthestTokenReadI == len(self.__tokens)-2:
             raise EOFError()
         return token
 
@@ -121,551 +132,1016 @@ class Parser():
         self.__currentTokenI = tokenI
         self.__currentToken = self.__tokens[self.__currentTokenI]
         return None
+
+    def __PrintTrace(self) -> None:
+        if not self.__echoTrace:
+            return None
+        lenTraceStack: int = len(self.__traceStack)
+        print('current trace stack: ', end='', file=self.__ouTextFile)
+        for i in range(lenTraceStack):
+            productionRule = self.__traceStack[i]
+            endStr = '->' if i != lenTraceStack-1 else '\n'
+            print(f'{productionRule}',end=endStr,file=self.__ouTextFile)
+        return None
+
+    def __ProductionRuleName(self, productionRule: typing.Callable) -> str:
+        return productionRule.__qualname__.split(".__")[-1]
+
     # ------------------------------
     # NOTE - NON TERMINALS
     def __NT_Program(self) -> sp.ParserTreeNode:
-        n = sp.ParserTreeNode()
-        self.__NT_Declaration()
-        self.__NT_DeclarationList()
+        ruleName: str = self.__ProductionRuleName(self.__NT_Program)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
+        try:
+            tmp = self.__NT_Declaration()
+            n.AddNode(tmp)
+            tmp = self.__NT_DeclarationList()
+            n.AddNode(tmp)
+        except EOFError:
+            pass
+
+        self.__traceStack.pop()
         return n
 
     def __NT_DeclarationList(self) -> sp.ParserTreeNode:
         #NOTE - optional production
-        n = sp.ParserTreeNode()
+        ruleName: str = self.__ProductionRuleName(self.__NT_DeclarationList)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
         currentI = self.__currentTokenI
         try:
-            self.__NT_Declaration()
-            self.__NT_DeclarationList()
+            tmp = self.__NT_Declaration()
+            n.AddNode(tmp)
+            tmp = self.__NT_DeclarationList()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         self.__SetCurrentToken(currentI)
+
+        self.__traceStack.pop()
         return n
 
     def __NT_Declaration(self) -> sp.ParserTreeNode:
-        n = sp.ParserTreeNode()
+        ruleName: str = self.__ProductionRuleName(self.__NT_Declaration)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
         currentI = self.__currentTokenI
         try:
-            self.__T_Int()
-            self.__T_Id()
-            self.__NT_Declaration1()
+            tmp = self.__T_Int()
+            n.AddNode(tmp)
+            tmp = self.__T_Id()
+            n.AddNode(tmp)
+            tmp = self.__NT_Declaration1()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         self.__SetCurrentToken(currentI)
-        self.__T_Void()
-        self.__T_Id()
-        self.__NT_Declaration1()
+        tmp = self.__T_Void()
+        n.AddNode(tmp)
+        tmp = self.__T_Id()
+        n.AddNode(tmp)
+        tmp = self.__NT_Declaration1()
+        n.AddNode(tmp)
+
+        self.__traceStack.pop()
         return n
 
     def __NT_Declaration1(self) -> sp.ParserTreeNode:
-        n = sp.ParserTreeNode()
+        ruleName: str = self.__ProductionRuleName(self.__NT_Declaration1)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
         currentI = self.__currentTokenI
         try:
-            self.__T_Semicolon()
+            tmp = self.__T_Semicolon()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         try:
             self.__SetCurrentToken(currentI)
-            self.__T_SquareBracketsOpen()
-            self.__T_Num()
-            self.__T_SquareBracketsClose()
-            self.__T_Semicolon()
+            tmp = self.__T_SquareBracketsOpen()
+            n.AddNode(tmp)
+            tmp = self.__T_Num()
+            n.AddNode(tmp)
+            tmp = self.__T_SquareBracketsClose()
+            n.AddNode(tmp)
+            tmp = self.__T_Semicolon()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         self.__SetCurrentToken(currentI)
-        self.__T_ParenthesesOpen()
-        self.__NT_Params()
-        self.__T_ParenthesesClose()
-        self.__NT_CompoundStmt()
+        tmp = self.__T_ParenthesesOpen()
+        n.AddNode(tmp)
+        tmp = self.__NT_Params()
+        n.AddNode(tmp)
+        tmp = self.__T_ParenthesesClose()
+        n.AddNode(tmp)
+        tmp = self.__NT_CompoundStmt()
+        n.AddNode(tmp)
+
+        self.__traceStack.pop()
         return n
 
     def __NT_Params(self) -> sp.ParserTreeNode:
-        n = sp.ParserTreeNode()
+        ruleName: str = self.__ProductionRuleName(self.__NT_Params)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
         currentI = self.__currentTokenI
         try:
-            self.__T_Void()
+            tmp = self.__T_Void()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         self.__SetCurrentToken(currentI)
-        self.__NT_Param()
-        self.__NT_ParamList()
+        tmp = self.__NT_Param()
+        n.AddNode(tmp)
+        tmp = self.__NT_ParamList()
+        n.AddNode(tmp)
+
+        self.__traceStack.pop()
         return n
 
     def __NT_ParamList(self) -> sp.ParserTreeNode:
         #NOTE - optional production
-        n = sp.ParserTreeNode()
+        ruleName: str = self.__ProductionRuleName(self.__NT_ParamList)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
         currentI = self.__currentTokenI
         try:
-            self.__T_Comma()
-            self.__NT_Param()
-            self.__NT_ParamList()
+            tmp = self.__T_Comma()
+            n.AddNode(tmp)
+            tmp = self.__NT_Param()
+            n.AddNode(tmp)
+            tmp = self.__NT_ParamList()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         self.__SetCurrentToken(currentI)
+
+        self.__traceStack.pop()
         return n
 
     def __NT_Param(self) -> sp.ParserTreeNode:
-        n = sp.ParserTreeNode()
+        ruleName: str = self.__ProductionRuleName(self.__NT_Param)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
         currentI = self.__currentTokenI
         try:
-            self.__T_Int()
-            self.__T_Id()
-            self.__NT_Param1()
+            tmp = self.__T_Int()
+            n.AddNode(tmp)
+            tmp = self.__T_Id()
+            n.AddNode(tmp)
+            tmp = self.__NT_Param1()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         self.__SetCurrentToken(currentI)
-        self.__T_Void()
-        self.__T_Id()
-        self.__NT_Param1()
+        tmp = self.__T_Void()
+        n.AddNode(tmp)
+        tmp = self.__T_Id()
+        n.AddNode(tmp)
+        tmp = self.__NT_Param1()
+        n.AddNode(tmp)
+
+        self.__traceStack.pop()
         return n
 
     def __NT_Param1(self) -> sp.ParserTreeNode:
         #NOTE - optional production
-        n = sp.ParserTreeNode()
+        ruleName: str = self.__ProductionRuleName(self.__NT_Param1)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
         currentI = self.__currentTokenI
         try:
-            self.__T_SquareBracketsOpen()
-            self.__T_SquareBracketsClose()
+            tmp = self.__T_SquareBracketsOpen()
+            n.AddNode(tmp)
+            tmp = self.__T_SquareBracketsClose()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         self.__SetCurrentToken(currentI)
+
+        self.__traceStack.pop()
         return n
 
     def __NT_CompoundStmt(self) -> sp.ParserTreeNode:
-        n = sp.ParserTreeNode()
-        self.__T_CurlyBracketsOpen()
-        self.__NT_LocalDeclarations()
-        self.__NT_StatementList()
-        self.__T_CurlyBracketsClose()
+        ruleName: str = self.__ProductionRuleName(self.__NT_CompoundStmt)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
+        tmp = self.__T_CurlyBracketsOpen()
+        n.AddNode(tmp)
+        tmp = self.__NT_LocalDeclarations()
+        n.AddNode(tmp)
+        tmp = self.__NT_StatementList()
+        n.AddNode(tmp)
+        tmp = self.__T_CurlyBracketsClose()
+        n.AddNode(tmp)
+
+        self.__traceStack.pop()
         return n
 
     def __NT_LocalDeclarations(self) -> sp.ParserTreeNode:
         #NOTE - optional production
-        n = sp.ParserTreeNode()
+        ruleName: str = self.__ProductionRuleName(self.__NT_LocalDeclarations)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
         currentI = self.__currentTokenI
         try:
-            self.__T_Int()
-            self.__T_Id()
-            self.__NT_LocalDeclarations1()
+            tmp = self.__T_Int()
+            n.AddNode(tmp)
+            tmp = self.__T_Id()
+            n.AddNode(tmp)
+            tmp = self.__NT_LocalDeclarations1()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         try:
             self.__SetCurrentToken(currentI)
-            self.__T_Void()
-            self.__T_Id()
-            self.__NT_LocalDeclarations1()
+            tmp = self.__T_Void()
+            n.AddNode(tmp)
+            tmp = self.__T_Id()
+            n.AddNode(tmp)
+            tmp = self.__NT_LocalDeclarations1()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         self.__SetCurrentToken(currentI)
+
+        self.__traceStack.pop()
         return n
 
     def __NT_LocalDeclarations1(self) -> sp.ParserTreeNode:
-        n = sp.ParserTreeNode()
+        ruleName: str = self.__ProductionRuleName(self.__NT_LocalDeclarations1)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
         currentI = self.__currentTokenI
         try:
-            self.__T_Semicolon()
-            self.__NT_LocalDeclarations()
+            tmp = self.__T_Semicolon()
+            n.AddNode(tmp)
+            tmp = self.__NT_LocalDeclarations()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         self.__SetCurrentToken(currentI)
-        self.__T_SquareBracketsOpen()
-        self.__T_Num()
-        self.__T_SquareBracketsClose()
-        self.__T_Semicolon()
-        self.__NT_LocalDeclarations()
+        tmp = self.__T_SquareBracketsOpen()
+        n.AddNode(tmp)
+        tmp = self.__T_Num()
+        n.AddNode(tmp)
+        tmp = self.__T_SquareBracketsClose()
+        n.AddNode(tmp)
+        tmp = self.__T_Semicolon()
+        n.AddNode(tmp)
+        tmp = self.__NT_LocalDeclarations()
+        n.AddNode(tmp)
+
+        self.__traceStack.pop()
         return n
 
     def __NT_StatementList(self) -> sp.ParserTreeNode:
         #NOTE - optional production
-        n = sp.ParserTreeNode()
+        ruleName: str = self.__ProductionRuleName(self.__NT_StatementList)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
         currentI = self.__currentTokenI
         try:
-            self.__NT_Statement()
-            self.__NT_StatementList()
+            tmp = self.__NT_Statement()
+            n.AddNode(tmp)
+            tmp = self.__NT_StatementList()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         self.__SetCurrentToken(currentI)
+
+        self.__traceStack.pop()
         return n
 
     def __NT_Statement(self) -> sp.ParserTreeNode:
-        n = sp.ParserTreeNode()
+        ruleName: str = self.__ProductionRuleName(self.__NT_Statement)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
         currentI = self.__currentTokenI
         try:
-            self.__T_CurlyBracketsOpen()
-            self.__NT_LocalDeclarations()
-            self.__NT_StatementList()
-            self.__T_CurlyBracketsClose()
+            tmp = self.__T_CurlyBracketsOpen()
+            n.AddNode(tmp)
+            tmp = self.__NT_LocalDeclarations()
+            n.AddNode(tmp)
+            tmp = self.__NT_StatementList()
+            n.AddNode(tmp)
+            tmp = self.__T_CurlyBracketsClose()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         try:
             self.__SetCurrentToken(currentI)
-            self.__T_If()
-            self.__T_ParenthesesOpen()
-            self.__NT_Expression()
-            self.__T_ParenthesesClose()
-            self.__NT_Statement()
-            self.__NT_Statement2()
+            tmp = self.__T_If()
+            n.AddNode(tmp)
+            tmp = self.__T_ParenthesesOpen()
+            n.AddNode(tmp)
+            tmp = self.__NT_Expression()
+            n.AddNode(tmp)
+            tmp = self.__T_ParenthesesClose()
+            n.AddNode(tmp)
+            tmp = self.__NT_Statement()
+            n.AddNode(tmp)
+            tmp = self.__NT_Statement2()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         try:
             self.__SetCurrentToken(currentI)
-            self.__T_While()
-            self.__T_ParenthesesOpen()
-            self.__NT_Expression()
-            self.__T_ParenthesesClose()
-            self.__NT_Statement()
+            tmp = self.__T_While()
+            n.AddNode(tmp)
+            tmp = self.__T_ParenthesesOpen()
+            n.AddNode(tmp)
+            tmp = self.__NT_Expression()
+            n.AddNode(tmp)
+            tmp = self.__T_ParenthesesClose()
+            n.AddNode(tmp)
+            tmp = self.__NT_Statement()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         try:
             self.__SetCurrentToken(currentI)
-            self.__T_Return()
-            self.__NT_Statement1()
+            tmp = self.__T_Return()
+            n.AddNode(tmp)
+            tmp = self.__NT_Statement1()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         self.__SetCurrentToken(currentI)
-        self.__NT_Statement1()
+        tmp = self.__NT_Statement1()
+        n.AddNode(tmp)
+
+        self.__traceStack.pop()
         return n
 
     def __NT_Statement1(self) -> sp.ParserTreeNode:
-        n = sp.ParserTreeNode()
+        ruleName: str = self.__ProductionRuleName(self.__NT_Statement1)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
         currentI = self.__currentTokenI
         try:
-            self.__T_Semicolon()
+            tmp = self.__T_Semicolon()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         self.__SetCurrentToken(currentI)
-        self.__NT_Expression()
-        self.__T_Semicolon()
+        tmp = self.__NT_Expression()
+        n.AddNode(tmp)
+        tmp = self.__T_Semicolon()
+        n.AddNode(tmp)
+
+        self.__traceStack.pop()
         return n
 
     def __NT_Statement2(self) -> sp.ParserTreeNode:
         #NOTE - optional production
-        n = sp.ParserTreeNode()
+        ruleName: str = self.__ProductionRuleName(self.__NT_Statement2)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
         currentI = self.__currentTokenI
         try:
-            self.__T_Else()
-            self.__NT_Statement()
+            tmp = self.__T_Else()
+            n.AddNode(tmp)
+            tmp = self.__NT_Statement()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         self.__SetCurrentToken(currentI)
+
+        self.__traceStack.pop()
         return n
 
     def __NT_Expression(self) -> sp.ParserTreeNode:
-        n = sp.ParserTreeNode()
+        ruleName: str = self.__ProductionRuleName(self.__NT_Expression)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
         currentI = self.__currentTokenI
         try:
-            self.__NT_Var()
-            self.__T_Assignement()
-            self.__NT_Expression()
+            tmp = self.__NT_Var()
+            n.AddNode(tmp)
+            tmp = self.__T_Assignement()
+            n.AddNode(tmp)
+            tmp = self.__NT_Expression()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         self.__SetCurrentToken(currentI)
-        self.__NT_SimpleExpression()
+        tmp = self.__NT_SimpleExpression()
+        n.AddNode(tmp)
+
+        self.__traceStack.pop()
         return n
 
     def __NT_Var(self) -> sp.ParserTreeNode:
-        n = sp.ParserTreeNode()
-        self.__T_Id()
-        self.__NT_Factor1_OR_Var1()
+        ruleName: str = self.__ProductionRuleName(self.__NT_Var)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
+        tmp = self.__T_Id()
+        n.AddNode(tmp)
+        tmp = self.__NT_Factor1_OR_Var1()
+        n.AddNode(tmp)
+
+        self.__traceStack.pop()
         return n
 
     def __NT_SimpleExpression(self) -> sp.ParserTreeNode:
-        n = sp.ParserTreeNode()
-        self.__NT_AdditiveExpression()
-        self.__NT_SimpleExpression1()
+        ruleName: str = self.__ProductionRuleName(self.__NT_SimpleExpression)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
+        tmp = self.__NT_AdditiveExpression()
+        n.AddNode(tmp)
+        tmp = self.__NT_SimpleExpression1()
+        n.AddNode(tmp)
+
+        self.__traceStack.pop()
         return n
 
     def __NT_SimpleExpression1(self) -> sp.ParserTreeNode:
         #NOTE - optional production
-        n = sp.ParserTreeNode()
+        ruleName: str = self.__ProductionRuleName(self.__NT_SimpleExpression1)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
         currentI = self.__currentTokenI
         try:
-            self.__NT_Relop()
-            self.__NT_AdditiveExpression()
+            tmp = self.__NT_Relop()
+            n.AddNode(tmp)
+            tmp = self.__NT_AdditiveExpression()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         self.__SetCurrentToken(currentI)
+
+        self.__traceStack.pop()
         return n
 
     def __NT_Relop(self) -> sp.ParserTreeNode:
-        n = sp.ParserTreeNode()
+        ruleName: str = self.__ProductionRuleName(self.__NT_Relop)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
         currentI = self.__currentTokenI
         try:
-            self.__T_LessEqual()
+            tmp = self.__T_LessEqual()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         try:
             self.__SetCurrentToken(currentI)
-            self.__T_Less()
+            tmp = self.__T_Less()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         try:
             self.__SetCurrentToken(currentI)
-            self.__T_Greater()
+            tmp = self.__T_Greater()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         try:
             self.__SetCurrentToken(currentI)
-            self.__T_GreaterEqual()
+            tmp = self.__T_GreaterEqual()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         try:
             self.__SetCurrentToken(currentI)
-            self.__T_Equal()
+            tmp = self.__T_Equal()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         self.__SetCurrentToken(currentI)
-        self.__T_Different()
+        tmp = self.__T_Different()
+        n.AddNode(tmp)
+
+        self.__traceStack.pop()
         return n
 
     def __NT_AdditiveExpression(self) -> sp.ParserTreeNode:
-        n = sp.ParserTreeNode()
-        self.__NT_Term()
-        self.__NT_AdditiveExpression1()
+        ruleName: str = self.__ProductionRuleName(self.__NT_AdditiveExpression)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
+        tmp = self.__NT_Term()
+        n.AddNode(tmp)
+        tmp = self.__NT_AdditiveExpression1()
+        n.AddNode(tmp)
+
+        self.__traceStack.pop()
         return n
 
     def __NT_AdditiveExpression1(self) -> sp.ParserTreeNode:
         #NOTE - optional production
-        n = sp.ParserTreeNode()
+        ruleName: str = self.__ProductionRuleName(self.__NT_AdditiveExpression1)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
         currentI = self.__currentTokenI
         try:
-            self.__NT_Addop()
-            self.__NT_Term()
-            self.__NT_AdditiveExpression1()
+            tmp = self.__NT_Addop()
+            n.AddNode(tmp)
+            tmp = self.__NT_Term()
+            n.AddNode(tmp)
+            tmp = self.__NT_AdditiveExpression1()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         self.__SetCurrentToken(currentI)
+
+        self.__traceStack.pop()
         return n
 
     def __NT_Addop(self) -> sp.ParserTreeNode:
-        n = sp.ParserTreeNode()
+        ruleName: str = self.__ProductionRuleName(self.__NT_Addop)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
         currentI = self.__currentTokenI
         try:
-            self.__T_Plus()
+            tmp = self.__T_Plus()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         self.__SetCurrentToken(currentI)
-        self.__T_Minus()
+        tmp = self.__T_Minus()
+        n.AddNode(tmp)
+
+        self.__traceStack.pop()
         return n
 
     def __NT_Term(self) -> sp.ParserTreeNode:
-        n = sp.ParserTreeNode()
-        self.__NT_Factor()
-        self.__NT_Term1()
+        ruleName: str = self.__ProductionRuleName(self.__NT_Term)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
+        tmp = self.__NT_Factor()
+        n.AddNode(tmp)
+        tmp = self.__NT_Term1()
+        n.AddNode(tmp)
+
+        self.__traceStack.pop()
         return n
 
     def __NT_Term1(self) -> sp.ParserTreeNode:
         #NOTE - optional production
-        n = sp.ParserTreeNode()
+        ruleName: str = self.__ProductionRuleName(self.__NT_Term1)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
         currentI = self.__currentTokenI
         try:
-            self.__NT_Mulop()
-            self.__NT_Factor()
-            self.__NT_Term1()
+            tmp = self.__NT_Mulop()
+            n.AddNode(tmp)
+            tmp = self.__NT_Factor()
+            n.AddNode(tmp)
+            tmp = self.__NT_Term1()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         self.__SetCurrentToken(currentI)
+
+        self.__traceStack.pop()
         return n
 
     def __NT_Mulop(self) -> sp.ParserTreeNode:
-        n = sp.ParserTreeNode()
+        ruleName: str = self.__ProductionRuleName(self.__NT_Mulop)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
         currentI = self.__currentTokenI
         try:
-            self.__T_Multiply()
+            tmp = self.__T_Multiply()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         self.__SetCurrentToken(currentI)
-        self.__T_Divide()
+        tmp = self.__T_Divide()
+        n.AddNode(tmp)
+
+        self.__traceStack.pop()
         return n
 
     def __NT_Factor(self) -> sp.ParserTreeNode:
-        n = sp.ParserTreeNode()
+        ruleName: str = self.__ProductionRuleName(self.__NT_Factor)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
         currentI = self.__currentTokenI
         try:
-            self.__T_ParenthesesOpen()
-            self.__NT_Expression()
-            self.__T_ParenthesesClose()
+            tmp = self.__T_ParenthesesOpen()
+            n.AddNode(tmp)
+            tmp = self.__NT_Expression()
+            n.AddNode(tmp)
+            tmp = self.__T_ParenthesesClose()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         try:
             self.__SetCurrentToken(currentI)
-            self.__T_Id()
-            self.__NT_Factor2()
+            tmp = self.__T_Id()
+            n.AddNode(tmp)
+            tmp = self.__NT_Factor2()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         self.__SetCurrentToken(currentI)
-        self.__T_Num()
+        tmp = self.__T_Num()
+        n.AddNode(tmp)
+
+        self.__traceStack.pop()
         return n
 
     def __NT_Factor1_OR_Var1(self):
         #NOTE - optional production
-        n = sp.ParserTreeNode()
+        ruleName: str = self.__ProductionRuleName(self.__NT_Factor1_OR_Var1)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
         currentI = self.__currentTokenI
         try:
-            self.__T_SquareBracketsOpen()
-            self.__NT_Expression()
-            self.__T_SquareBracketsClose()
+            tmp = self.__T_SquareBracketsOpen()
+            n.AddNode(tmp)
+            tmp = self.__NT_Expression()
+            n.AddNode(tmp)
+            tmp = self.__T_SquareBracketsClose()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         self.__SetCurrentToken(currentI)
+
+        self.__traceStack.pop()
         return n
 
     def __NT_Factor2(self):
-        n = sp.ParserTreeNode()
+        ruleName: str = self.__ProductionRuleName(self.__NT_Factor2)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
         currentI = self.__currentTokenI
         try:
-            self.__T_ParenthesesOpen()
-            self.__NT_Args()
-            self.__T_ParenthesesClose()
+            tmp = self.__T_ParenthesesOpen()
+            n.AddNode(tmp)
+            tmp = self.__NT_Args()
+            n.AddNode(tmp)
+            tmp = self.__T_ParenthesesClose()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         self.__SetCurrentToken(currentI)
-        self.__NT_Factor1_OR_Var1()
+        tmp = self.__NT_Factor1_OR_Var1()
+        n.AddNode(tmp)
+
+        self.__traceStack.pop()
         return n
 
     def __NT_Args(self) -> sp.ParserTreeNode:
         #NOTE - optional production
-        n = sp.ParserTreeNode()
+        ruleName: str = self.__ProductionRuleName(self.__NT_Args)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
         currentI = self.__currentTokenI
         try:
-            self.__T_Id()
-            self.__NT_ArgList1()
+            tmp = self.__T_Id()
+            n.AddNode(tmp)
+            tmp = self.__NT_ArgList1()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         try:
             self.__SetCurrentToken(currentI)
-            self.__T_ParenthesesOpen()
-            self.__NT_Expression()
-            self.__T_ParenthesesClose()
-            self.__NT_Term1()
-            self.__NT_AdditiveExpression1()
-            self.__NT_ArgList2()
+            tmp = self.__T_ParenthesesOpen()
+            n.AddNode(tmp)
+            tmp = self.__NT_Expression()
+            n.AddNode(tmp)
+            tmp = self.__T_ParenthesesClose()
+            n.AddNode(tmp)
+            tmp = self.__NT_Term1()
+            n.AddNode(tmp)
+            tmp = self.__NT_AdditiveExpression1()
+            n.AddNode(tmp)
+            tmp = self.__NT_ArgList2()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         try:
             self.__SetCurrentToken(currentI)
-            self.__T_Num()
-            self.__NT_Term1()
-            self.__NT_AdditiveExpression1()
-            self.__NT_ArgList2()
+            tmp = self.__T_Num()
+            n.AddNode(tmp)
+            tmp = self.__NT_Term1()
+            n.AddNode(tmp)
+            tmp = self.__NT_AdditiveExpression1()
+            n.AddNode(tmp)
+            tmp = self.__NT_ArgList2()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         self.__SetCurrentToken(currentI)
+
+        self.__traceStack.pop()
         return n
 
     def __NT_ArgList(self) -> sp.ParserTreeNode:
         #NOTE - optional production
-        n = sp.ParserTreeNode()
+        ruleName: str = self.__ProductionRuleName(self.__NT_ArgList)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
         currentI = self.__currentTokenI
         try:
-            self.__T_Comma()
-            self.__NT_Expression()
-            self.__NT_ArgList()
+            tmp = self.__T_Comma()
+            n.AddNode(tmp)
+            tmp = self.__NT_Expression()
+            n.AddNode(tmp)
+            tmp = self.__NT_ArgList()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         self.__SetCurrentToken(currentI)
+
+        self.__traceStack.pop()
         return n
 
     def __NT_ArgList1(self) -> sp.ParserTreeNode:
-        n = sp.ParserTreeNode()
+        ruleName: str = self.__ProductionRuleName(self.__NT_ArgList1)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
         currentI = self.__currentTokenI
         try:
-            self.__T_Assignement()
-            self.__NT_Expression()
-            self.__NT_ArgList()
+            tmp = self.__T_Assignement()
+            n.AddNode(tmp)
+            tmp = self.__NT_Expression()
+            n.AddNode(tmp)
+            tmp = self.__NT_ArgList()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         try:
             self.__SetCurrentToken(currentI)
-            self.__T_SquareBracketsOpen()
-            self.__NT_Expression()
-            self.__T_SquareBracketsClose()
-            self.__NT_ArgList3()
+            tmp = self.__T_SquareBracketsOpen()
+            n.AddNode(tmp)
+            tmp = self.__NT_Expression()
+            n.AddNode(tmp)
+            tmp = self.__T_SquareBracketsClose()
+            n.AddNode(tmp)
+            tmp = self.__NT_ArgList3()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         try:
             self.__SetCurrentToken(currentI)
-            self.__T_ParenthesesOpen()
-            self.__NT_Args()
-            self.__T_ParenthesesClose()
-            self.__NT_Term1()
-            self.__NT_AdditiveExpression1()
-            self.__NT_ArgList2()
+            tmp = self.__T_ParenthesesOpen()
+            n.AddNode(tmp)
+            tmp = self.__NT_Args()
+            n.AddNode(tmp)
+            tmp = self.__T_ParenthesesClose()
+            n.AddNode(tmp)
+            tmp = self.__NT_Term1()
+            n.AddNode(tmp)
+            tmp = self.__NT_AdditiveExpression1()
+            n.AddNode(tmp)
+            tmp = self.__NT_ArgList2()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         self.__SetCurrentToken(currentI)
-        self.__NT_Term1()
-        self.__NT_AdditiveExpression1()
-        self.__NT_ArgList2()
+        tmp = self.__NT_Term1()
+        n.AddNode(tmp)
+        tmp = self.__NT_AdditiveExpression1()
+        n.AddNode(tmp)
+        tmp = self.__NT_ArgList2()
+        n.AddNode(tmp)
+
+        self.__traceStack.pop()
         return n
 
     def __NT_ArgList2(self) -> sp.ParserTreeNode:
-        n = sp.ParserTreeNode()
+        ruleName: str = self.__ProductionRuleName(self.__NT_ArgList2)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
         currentI = self.__currentTokenI
         try:
-            self.__NT_Relop()
-            self.__NT_AdditiveExpression()
-            self.__NT_ArgList()
+            tmp = self.__NT_Relop()
+            n.AddNode(tmp)
+            tmp = self.__NT_AdditiveExpression()
+            n.AddNode(tmp)
+            tmp = self.__NT_ArgList()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         self.__SetCurrentToken(currentI)
-        self.__NT_ArgList()
+        tmp = self.__NT_ArgList()
+        n.AddNode(tmp)
+
+        self.__traceStack.pop()
         return n
 
     def __NT_ArgList3(self) -> sp.ParserTreeNode:
-        n = sp.ParserTreeNode()
+        ruleName: str = self.__ProductionRuleName(self.__NT_ArgList3)
+        self.__traceStack.append(ruleName)
+        self.__PrintTrace()
+
+        n = sp.ParserTreeNode(ruleName)
         currentI = self.__currentTokenI
         try:
-            self.__T_Assignement()
-            self.__NT_Expression()
-            self.__NT_ArgList()
+            tmp = self.__T_Assignement()
+            n.AddNode(tmp)
+            tmp = self.__NT_Expression()
+            n.AddNode(tmp)
+            tmp = self.__NT_ArgList()
+            n.AddNode(tmp)
+
+            self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
-            pass
+            n.ClearNode()
         self.__SetCurrentToken(currentI)
-        self.__NT_Term1()
-        self.__NT_AdditiveExpression1()
-        self.__NT_ArgList2()
+        tmp = self.__NT_Term1()
+        n.AddNode(tmp)
+        tmp = self.__NT_AdditiveExpression1()
+        n.AddNode(tmp)
+        tmp = self.__NT_ArgList2()
+        n.AddNode(tmp)
+
+        self.__traceStack.pop()
         return n
 
     # NOTE - TERMINALS

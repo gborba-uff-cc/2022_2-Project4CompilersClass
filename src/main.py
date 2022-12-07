@@ -15,6 +15,7 @@ import finite_automaton.automaton_language_cminus as fa_alc
 import scanner.scanner as ss
 import parser.parser as pp
 import structures.token as st
+import structures.parser_tree_node as sp
 
 
 def Main() -> int:
@@ -89,7 +90,7 @@ class ModuleOptions(argparse.Namespace):
     parserOutputFileSuffix: str = '.parsero'
     filesEncoding: str = 'utf-8'
     # NOTE - define where to print
-    outputTo: typing.TextIO = sys.stdout
+    outputTo: typing.TextIO = sys.stdout  # TODO - permit change from command line
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -131,12 +132,12 @@ def RunParser(options: ModuleOptions):
     """
     textEchoBuffer = options.outputTo
 
-    # print(NotImplementedError(f'["if moduleOptions.sourceParse:" branch on {Main.__qualname__} isn\'t implemented yet]'))
-    # exit(1)
     with open(options.scannerOutputFile, mode='r', encoding=options.filesEncoding) as inputFile, \
-         open(options.sourcePath, mode='r', encoding=options.filesEncoding) as outputFile:
+         open(options.parserOutputFile, mode='w', encoding=options.filesEncoding) as outputFile:
         sourceParser = pp.Parser(inputFile, textEchoBuffer, options.echoTraceParser)
-        sourceParser.Parse()
+        tree: sp.ParserTreeNode = sourceParser.Parse()
+        treeText: str = tree.NodeStr()
+        outputFile.write(f'{treeText}')
         pass
     return
 

@@ -1,0 +1,6 @@
+1. definir o gramatica da linguagem
+2. remover recursões indiretas e diretas da gramatica
+3. fatorar regras de produção
+4. remover não terminais que geram a mesma coisa, mantendo apenas 1 deles
+5. definir o conjunto primeiro e o conjunto sequencia dos não terminais
+6. verificar se a gramática é LL(1)

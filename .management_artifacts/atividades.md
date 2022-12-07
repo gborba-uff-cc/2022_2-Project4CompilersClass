@@ -1,17 +1,40 @@
 # Atividades
 
-[ ] - Código fonte de um exemplo de programa a ser lido pelo scanner na linguagem escolhida
+## A fazer
 
-[ ] - documento que apresente 
+### Primeira etapa
 
-[ ] - documento que apresente:
+    [x] - Código fonte de um exemplo de programa a ser lido pelo scanner na linguagem escolhida
 
-[ ] - as expressões regulares dos tokens que devem ser reconhecidos
+    [x] - código fonte de um analisador léxico
 
-[ ] - os autômatos gerados (não deterministico, deterministico, e deterministico minimizado)
+    [x] - saída gerada do analisador léxico implementado para o código fonte do exemplo apresentado
 
-[ ] - ferramentas utilizadas no processo
+    [x] - documento que apresente:
+        [x] - as expressões regulares dos tokens que devem ser reconhecidos
 
-[ ] - dificuldades e problemas enfrentados pelo grupo e o que foi feito para contornar/resolver
+        [x] - os autômatos gerados
+            [x] - não deterministico
+            [x] - deterministico
+            [x] - deterministico minimizado
 
-[ ] - saída gerada do analisador léxico implementado para o código fonte do exemplo apresentado
+        [x] - ferramentas utilizadas no processo
+
+        [x] - dificuldades e problemas enfrentados pelo grupo e o que foi feito para contornar/resolver
+
+### Segunda etapa
+
+    [x] - verificar se a linguagem escolhida (cminus) é LL(1)
+        [x] - exibir todos passos necessários para a verificação
+
+    [X] - código fonte de um analisador sintático descendente recursivo
+        [X] - implemetação de algum tratamento de erro, indicando em que linha do código fonte da entrada o erro ocorreu
+
+    [ ] - criar tabela de simbolos
+
+    [ ] - verificar na tabela de simbolos caso um identificador tenha sido usado sem ter sido declarado
+
+    [x] - saída gerada pelo analisador sintático
+
+    [ ] - ducumento que apresente:
+        [ ] - decisões de projeto e de implementação do analisador sintático

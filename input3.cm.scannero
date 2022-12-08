@@ -34,7 +34,6 @@
 <11,10,SEMICOLON,";">
 <13,5,INT,"int">
 <13,9,ID,"soma">
-<13,13,SEMICOLON,";">
 <15,5,ID,"counter">
 <15,13,ASSIGNEMENT,"=">
 <15,15,NUM,"0">

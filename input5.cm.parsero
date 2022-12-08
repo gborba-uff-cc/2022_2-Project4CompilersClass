@@ -1,0 +1,347 @@
+NT_Program
+ NT_Declaration
+  INT: int
+  ID: DoubleOf
+  NT_Declaration1
+   PARENTHESES_OPEN: (
+   NT_Params
+    NT_Param
+     INT: int
+     ID: y
+   PARENTHESES_CLOSE: )
+   NT_CompoundStmt
+    CURLY_BRACKETS_OPEN: {
+    NT_StatementList
+     NT_Statement
+      RETURN: return
+      NT_Statement1
+       NT_Expression
+        NT_SimpleExpression
+         NT_AdditiveExpression
+          NT_Term
+           NT_Factor
+            NUM: 2
+           NT_Term1
+            NT_Mulop
+             MULTIPLY: *
+            NT_Factor
+             ID: x
+       SEMICOLON: ;
+    CURLY_BRACKETS_CLOSE: }
+ NT_DeclarationList
+  NT_Declaration
+   VOID: void
+   ID: main
+   NT_Declaration1
+    PARENTHESES_OPEN: (
+    NT_Params
+     VOID: void
+    PARENTHESES_CLOSE: )
+    NT_CompoundStmt
+     CURLY_BRACKETS_OPEN: {
+     NT_LocalDeclarations
+      INT: int
+      ID: counter
+      NT_LocalDeclarations1
+       SEMICOLON: ;
+       NT_LocalDeclarations
+        INT: int
+        ID: doubles
+        NT_LocalDeclarations1
+         SEMICOLON: ;
+         NT_LocalDeclarations
+          INT: int
+          ID: v
+          NT_LocalDeclarations1
+           SQUARE_BRACKET_OPEN: [
+           NUM: 4
+           SQUARE_BRACKET_CLOSE: ]
+           SEMICOLON: ;
+           NT_LocalDeclarations
+            INT: int
+            ID: i
+            NT_LocalDeclarations1
+             SEMICOLON: ;
+             NT_LocalDeclarations
+              INT: int
+              ID: soma
+              NT_LocalDeclarations1
+               SEMICOLON: ;
+     NT_StatementList
+      NT_Statement
+       NT_Statement1
+        NT_Expression
+         NT_Var
+          ID: counter
+         ASSIGNEMENT: =
+         NT_Expression
+          NT_SimpleExpression
+           NT_AdditiveExpression
+            NT_Term
+             NT_Factor
+              NUM: 0
+        SEMICOLON: ;
+      NT_StatementList
+       NT_Statement
+        NT_Statement1
+         NT_Expression
+          NT_Var
+           ID: doubles
+          ASSIGNEMENT: =
+          NT_Expression
+           NT_SimpleExpression
+            NT_AdditiveExpression
+             NT_Term
+              NT_Factor
+               NUM: 0
+         SEMICOLON: ;
+       NT_StatementList
+        NT_Statement
+         NT_Statement1
+          NT_Expression
+           NT_Var
+            ID: i
+           ASSIGNEMENT: =
+           NT_Expression
+            NT_SimpleExpression
+             NT_AdditiveExpression
+              NT_Term
+               NT_Factor
+                NUM: 0
+          SEMICOLON: ;
+        NT_StatementList
+         NT_Statement
+          NT_Statement1
+           NT_Expression
+            NT_Var
+             ID: soma
+            ASSIGNEMENT: =
+            NT_Expression
+             NT_SimpleExpression
+              NT_AdditiveExpression
+               NT_Term
+                NT_Factor
+                 NUM: 0
+           SEMICOLON: ;
+         NT_StatementList
+          NT_Statement
+           WHILE: while
+           PARENTHESES_OPEN: (
+           NT_Expression
+            NT_SimpleExpression
+             NT_AdditiveExpression
+              NT_Term
+               NT_Factor
+                ID: counter
+             NT_SimpleExpression1
+              NT_Relop
+               LESS: <
+              NT_AdditiveExpression
+               NT_Term
+                NT_Factor
+                 NUM: 100
+           PARENTHESES_CLOSE: )
+           NT_Statement
+            CURLY_BRACKETS_OPEN: {
+            NT_StatementList
+             NT_Statement
+              NT_Statement1
+               NT_Expression
+                NT_Var
+                 ID: acounter
+                ASSIGNEMENT: =
+                NT_Expression
+                 NT_SimpleExpression
+                  NT_AdditiveExpression
+                   NT_Term
+                    NT_Factor
+                     ID: counter
+                   NT_AdditiveExpression1
+                    NT_Addop
+                     PLUS: +
+                    NT_Term
+                     NT_Factor
+                      NUM: 1
+               SEMICOLON: ;
+             NT_StatementList
+              NT_Statement
+               NT_Statement1
+                NT_Expression
+                 NT_Var
+                  ID: bdoubles
+                 ASSIGNEMENT: =
+                 NT_Expression
+                  NT_SimpleExpression
+                   NT_AdditiveExpression
+                    NT_Term
+                     NT_Factor
+                      ID: DoubleOf
+                      NT_Factor2
+                       PARENTHESES_OPEN: (
+                       NT_Args
+                        ID: counter
+                       PARENTHESES_CLOSE: )
+                SEMICOLON: ;
+            CURLY_BRACKETS_CLOSE: }
+          NT_StatementList
+           NT_Statement
+            WHILE: while
+            PARENTHESES_OPEN: (
+            NT_Expression
+             NT_SimpleExpression
+              NT_AdditiveExpression
+               NT_Term
+                NT_Factor
+                 ID: i
+              NT_SimpleExpression1
+               NT_Relop
+                LESS: <
+               NT_AdditiveExpression
+                NT_Term
+                 NT_Factor
+                  NUM: 4
+            PARENTHESES_CLOSE: )
+            NT_Statement
+             CURLY_BRACKETS_OPEN: {
+             NT_StatementList
+              NT_Statement
+               NT_Statement1
+                NT_Expression
+                 NT_Var
+                  ID: v
+                  NT_Factor1_OR_Var1
+                   SQUARE_BRACKET_OPEN: [
+                   NT_Expression
+                    NT_SimpleExpression
+                     NT_AdditiveExpression
+                      NT_Term
+                       NT_Factor
+                        ID: i
+                   SQUARE_BRACKET_CLOSE: ]
+                 ASSIGNEMENT: =
+                 NT_Expression
+                  NT_SimpleExpression
+                   NT_AdditiveExpression
+                    NT_Term
+                     NT_Factor
+                      ID: i
+                SEMICOLON: ;
+              NT_StatementList
+               NT_Statement
+                NT_Statement1
+                 NT_Expression
+                  NT_Var
+                   ID: soma
+                  ASSIGNEMENT: =
+                  NT_Expression
+                   NT_SimpleExpression
+                    NT_AdditiveExpression
+                     NT_Term
+                      NT_Factor
+                       ID: soma
+                     NT_AdditiveExpression1
+                      NT_Addop
+                       PLUS: +
+                      NT_Term
+                       NT_Factor
+                        ID: i
+                 SEMICOLON: ;
+               NT_StatementList
+                NT_Statement
+                 NT_Statement1
+                  NT_Expression
+                   NT_Var
+                    ID: i
+                   ASSIGNEMENT: =
+                   NT_Expression
+                    NT_SimpleExpression
+                     NT_AdditiveExpression
+                      NT_Term
+                       NT_Factor
+                        ID: i
+                      NT_AdditiveExpression1
+                       NT_Addop
+                        PLUS: +
+                       NT_Term
+                        NT_Factor
+                         NUM: 1
+                  SEMICOLON: ;
+             CURLY_BRACKETS_CLOSE: }
+           NT_StatementList
+            NT_Statement
+             IF: if
+             PARENTHESES_OPEN: (
+             NT_Expression
+              NT_SimpleExpression
+               NT_AdditiveExpression
+                NT_Term
+                 NT_Factor
+                  ID: i
+               NT_SimpleExpression1
+                NT_Relop
+                 GREATER: 
+                NT_AdditiveExpression
+                 NT_Term
+                  NT_Factor
+                   NUM: 0
+             PARENTHESES_CLOSE: )
+             NT_Statement
+              CURLY_BRACKETS_OPEN: {
+              NT_StatementList
+               NT_Statement
+                NT_Statement1
+                 NT_Expression
+                  NT_Var
+                   ID: i
+                  ASSIGNEMENT: =
+                  NT_Expression
+                   NT_SimpleExpression
+                    NT_AdditiveExpression
+                     NT_Term
+                      NT_Factor
+                       PARENTHESES_OPEN: (
+                       NT_Expression
+                        NT_SimpleExpression
+                         NT_AdditiveExpression
+                          NT_Term
+                           NT_Factor
+                            NUM: 0
+                          NT_AdditiveExpression1
+                           NT_Addop
+                            MINUS: -
+                           NT_Term
+                            NT_Factor
+                             NUM: 1
+                       PARENTHESES_CLOSE: )
+                      NT_Term1
+                       NT_Mulop
+                        MULTIPLY: *
+                       NT_Factor
+                        ID: i
+                 SEMICOLON: ;
+              CURLY_BRACKETS_CLOSE: }
+             NT_Statement2
+              ELSE: else
+              NT_Statement
+               CURLY_BRACKETS_OPEN: {
+               NT_StatementList
+                NT_Statement
+                 NT_Statement1
+                  NT_Expression
+                   NT_Var
+                    ID: i
+                   ASSIGNEMENT: =
+                   NT_Expression
+                    NT_SimpleExpression
+                     NT_AdditiveExpression
+                      NT_Term
+                       NT_Factor
+                        NUM: 0
+                  SEMICOLON: ;
+               CURLY_BRACKETS_CLOSE: }
+            NT_StatementList
+             NT_Statement
+              RETURN: return
+              NT_Statement1
+               SEMICOLON: ;
+     CURLY_BRACKETS_CLOSE: }

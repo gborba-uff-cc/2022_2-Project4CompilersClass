@@ -1,0 +1,30 @@
+NT_Program
+ NT_Declaration
+  INT: int
+  ID: DoubleOf
+  NT_Declaration1
+   PARENTHESES_OPEN: (
+   NT_Params
+    NT_Param
+     INT: int
+     ID: x
+   PARENTHESES_CLOSE: )
+   NT_CompoundStmt
+    CURLY_BRACKETS_OPEN: {
+    NT_StatementList
+     NT_Statement
+      RETURN: return
+      NT_Statement1
+       NT_Expression
+        NT_SimpleExpression
+         NT_AdditiveExpression
+          NT_Term
+           NT_Factor
+            NUM: 2
+           NT_Term1
+            NT_Mulop
+             MULTIPLY: *
+            NT_Factor
+             ID: x
+       SEMICOLON: ;
+    CURLY_BRACKETS_CLOSE: }

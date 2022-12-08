@@ -30,11 +30,11 @@
     [X] - código fonte de um analisador sintático descendente recursivo
         [X] - implemetação de algum tratamento de erro, indicando em que linha do código fonte da entrada o erro ocorreu
 
-    [ ] - criar tabela de simbolos
+    [x] - criar tabela de simbolos
 
-    [ ] - verificar na tabela de simbolos caso um identificador tenha sido usado sem ter sido declarado
+    [x] - verificar na tabela de simbolos caso um identificador tenha sido usado sem ter sido declarado
 
     [x] - saída gerada pelo analisador sintático
 
-    [ ] - ducumento que apresente:
-        [ ] - decisões de projeto e de implementação do analisador sintático
+    [x] - ducumento que apresente:
+        [x] - decisões de projeto e de implementação do analisador sintático

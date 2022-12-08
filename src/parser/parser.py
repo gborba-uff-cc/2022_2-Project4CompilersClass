@@ -2,6 +2,7 @@ import io
 import typing
 import structures.token as st
 import structures.parser_tree_node as sp
+import structures.symbol_table as s_st
 
 
 def SyntaxErrorText(
@@ -16,6 +17,9 @@ def SyntaxErrorText(
         previousTokenText = f', the last recognized token was \"{previousToken.value}\" @ {previousToken.lineNo}.{previousToken.columnNo}\n'
     hintText = f'Read the tokens as: (token) (@: at) (lineNo).(columnNo)'
     return f'{msg}\nOn the file{f" {filename}" if filename else ""}, {currentTokenText}{previousTokenText}{hintText}'
+
+def UndeclaredIdText(token: st.Token):
+    return f'Use of undeclared id\n    "{token.value}" @ {token.lineNo}.{token.columnNo}\n    (token) (@: at) (lineNo).(columnNo)'
 
 class ParserInvalidOptionError(SyntaxError):
     def __init__(self, *args: object) -> None:
@@ -37,7 +41,7 @@ class Parser():
         echoTrace: bool = False,
     ) -> None:
         self.__sourceFile = sourceFile
-        self.__ouTextFile = outTextFile
+        self.__outTextFile = outTextFile
         self.__echoTrace = echoTrace
         self.__traceStack: list[str] = []
 
@@ -45,6 +49,8 @@ class Parser():
         self.__currentTokenI: int = -1
         self.__furthestTokenReadI: int = -1
         self.__currentToken: st.Token = st.Token()
+
+        self.__symbolsTable: s_st.SymbolTable = s_st.SymbolTable()
 
         # NOTE - load tokens
         self.__tokens = self.__ReadTokens()
@@ -64,15 +70,17 @@ class Parser():
 
     def Parse(self) -> sp.ParserTreeNode:
         """
+        Return a tuple with the parse tree, parse trace and misses on table trace
         """
         if self.__echoTrace:
-            print("\n\nParsing the souce file", file=self.__ouTextFile)
+            print("\n\nParsing the souce file", file=self.__outTextFile)
 
         n = sp.ParserTreeNode('')
+        self.__symbolsTable = s_st.SymbolTable()
         try:
             n = self.__NT_Program()
         except EOFError:  # NOTE - reached the end of file
-            print('Succesfully parsed the source file.',file=self.__ouTextFile)
+            print('Succesfully parsed the source file.',file=self.__outTextFile)
         except ParserInvalidOptionError:
             # NOTE - capture parse error on the first declaration on program but
             # don't treat it
@@ -116,6 +124,9 @@ class Parser():
         error.previousToken = previousToken
         raise error
 
+    def __UndeclaredIdError(self, aToken: st.Token) -> None:
+        print(UndeclaredIdText(aToken), file=self.__outTextFile)
+
     def __GetNextToken(self) -> st.Token:
         """
         Return the next token.
@@ -137,17 +148,23 @@ class Parser():
         if not self.__echoTrace:
             return None
         lenTraceStack: int = len(self.__traceStack)
-        print('current trace stack: ', end='', file=self.__ouTextFile)
+        print('current trace stack: ', end='', file=self.__outTextFile)
         for i in range(lenTraceStack):
             productionRule = self.__traceStack[i]
             endStr = '->' if i != lenTraceStack-1 else '\n'
-            print(f'{productionRule}',end=endStr,file=self.__ouTextFile)
+            print(f'{productionRule}',end=endStr,file=self.__outTextFile)
         return None
 
     def __ProductionRuleName(self, productionRule: typing.Callable) -> str:
         return productionRule.__qualname__.split(".__")[-1]
 
     # ------------------------------
+
+    # NOTE - for the symbols table:
+    # declarations when in: declaration1., LocalDeclarations1., Param1.
+    # new scopes when: declaration1 (calling CompoundStmt) and in Statement
+    # verify id when in: Var., Factor., Args
+
     # NOTE - NON TERMINALS
     def __NT_Program(self) -> sp.ParserTreeNode:
         ruleName: str = self.__ProductionRuleName(self.__NT_Program)
@@ -220,15 +237,21 @@ class Parser():
         return n
 
     def __NT_Declaration1(self) -> sp.ParserTreeNode:
+        # NOTE - declaration finish here
         ruleName: str = self.__ProductionRuleName(self.__NT_Declaration1)
         self.__traceStack.append(ruleName)
         self.__PrintTrace()
 
         n = sp.ParserTreeNode(ruleName)
         currentI = self.__currentTokenI
+        # NOTE - currentI-1 -> ID, currentI-2 -> type
         try:
             tmp = self.__T_Semicolon()
             n.AddNode(tmp)
+
+            self.__symbolsTable.InsertVariable(
+                self.__tokens[currentI-2].value,
+                self.__tokens[currentI-1].value)
 
             self.__traceStack.pop()
             return n
@@ -245,19 +268,39 @@ class Parser():
             tmp = self.__T_Semicolon()
             n.AddNode(tmp)
 
+            self.__symbolsTable.InsertArray(
+                self.__tokens[currentI-2].value,
+                self.__tokens[currentI-1].value)
+
             self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
             n.ClearNode()
         self.__SetCurrentToken(currentI)
-        tmp = self.__T_ParenthesesOpen()
-        n.AddNode(tmp)
-        tmp = self.__NT_Params()
-        n.AddNode(tmp)
-        tmp = self.__T_ParenthesesClose()
-        n.AddNode(tmp)
-        tmp = self.__NT_CompoundStmt()
-        n.AddNode(tmp)
+
+        pioe = None
+        try:  # NOTE - new scope
+            self.__symbolsTable = self.__symbolsTable.InitInnerScope()
+
+            tmp = self.__T_ParenthesesOpen()
+            n.AddNode(tmp)
+            tmp = self.__NT_Params()
+            n.AddNode(tmp)
+            tmp = self.__T_ParenthesesClose()
+            n.AddNode(tmp)
+            tmp = self.__NT_CompoundStmt()
+            n.AddNode(tmp)
+
+        except ParserInvalidOptionError as e:
+            pioe = e
+        finally:
+            self.__symbolsTable = self.__symbolsTable.DropThisScope()
+            if pioe:
+                raise pioe
+
+        self.__symbolsTable.InsertFunction(
+            self.__tokens[currentI-2].value,
+            self.__tokens[currentI-1].value)
 
         self.__traceStack.pop()
         return n
@@ -355,11 +398,19 @@ class Parser():
             tmp = self.__T_SquareBracketsClose()
             n.AddNode(tmp)
 
+            typeToken = self.__tokens[currentI-2]
+            idToken = self.__tokens[currentI-1]
+            self.__symbolsTable.InsertArray(typeToken.value, idToken.value)
+
             self.__traceStack.pop()
             return n
         except ParserInvalidOptionError:
             n.ClearNode()
         self.__SetCurrentToken(currentI)
+
+        typeToken = self.__tokens[currentI-2]
+        idToken = self.__tokens[currentI-1]
+        self.__symbolsTable.InsertVariable(typeToken.value, idToken.value)
 
         self.__traceStack.pop()
         return n
@@ -430,6 +481,11 @@ class Parser():
         try:
             tmp = self.__T_Semicolon()
             n.AddNode(tmp)
+
+            self.__symbolsTable.InsertVariable(
+                self.__tokens[currentI-2].value,
+                self.__tokens[currentI-1].value)
+
             tmp = self.__NT_LocalDeclarations()
             n.AddNode(tmp)
 
@@ -446,6 +502,11 @@ class Parser():
         n.AddNode(tmp)
         tmp = self.__T_Semicolon()
         n.AddNode(tmp)
+
+        self.__symbolsTable.InsertArray(
+            self.__tokens[currentI-2].value,
+            self.__tokens[currentI-1].value)
+
         tmp = self.__NT_LocalDeclarations()
         n.AddNode(tmp)
 
@@ -485,10 +546,23 @@ class Parser():
         try:
             tmp = self.__T_CurlyBracketsOpen()
             n.AddNode(tmp)
-            tmp = self.__NT_LocalDeclarations()
-            n.AddNode(tmp)
-            tmp = self.__NT_StatementList()
-            n.AddNode(tmp)
+
+            pioe = None
+            try:  # NOTE - new scope
+                self.__symbolsTable = self.__symbolsTable.InitInnerScope()
+
+                tmp = self.__NT_LocalDeclarations()
+                n.AddNode(tmp)
+                tmp = self.__NT_StatementList()
+                n.AddNode(tmp)
+
+            except ParserInvalidOptionError as e:
+                pioe = e
+            finally:
+                self.__symbolsTable = self.__symbolsTable.DropThisScope()
+                if pioe is not None:
+                    raise pioe
+
             tmp = self.__T_CurlyBracketsClose()
             n.AddNode(tmp)
 
@@ -629,10 +703,17 @@ class Parser():
         self.__PrintTrace()
 
         n = sp.ParserTreeNode(ruleName)
+        currentI = self.__currentTokenI
         tmp = self.__T_Id()
         n.AddNode(tmp)
         tmp = self.__NT_Factor1_OR_Var1()
         n.AddNode(tmp)
+
+        idToken = self.__tokens[currentI]
+        try:
+            self.__symbolsTable.LookupAllScopes(idToken.value)
+        except:
+            self.__UndeclaredIdError(idToken)
 
         self.__traceStack.pop()
         return n
@@ -877,6 +958,14 @@ class Parser():
             self.__SetCurrentToken(currentI)
             tmp = self.__T_Id()
             n.AddNode(tmp)
+
+            # NOTE - verifying if id is declared
+            idToken = self.__tokens[currentI]
+            try:
+                self.__symbolsTable.LookupAllScopes(idToken.value)
+            except:
+                self.__UndeclaredIdError(idToken)
+
             tmp = self.__NT_Factor2()
             n.AddNode(tmp)
 
@@ -953,6 +1042,14 @@ class Parser():
         try:
             tmp = self.__T_Id()
             n.AddNode(tmp)
+
+            # NOTE - verifying if id is declared
+            idToken = self.__tokens[currentI]
+            try:
+                self.__symbolsTable.LookupAllScopes(idToken.value)
+            except:
+                self.__UndeclaredIdError(idToken)
+
             tmp = self.__NT_ArgList1()
             n.AddNode(tmp)
 

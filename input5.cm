@@ -1,4 +1,4 @@
-/* correct input */
+/* incorrect input 4 */
 
 int DoubleOf(int y) {
     /* FIXME - undeclared identifiers */
